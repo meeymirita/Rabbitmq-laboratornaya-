@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RabbitMQ Lab — подробное руководство</title>
+<style>
+  :root { --red: #c62828; --red-dark: #8e1b1b; --red-light: #fdecea; --red-mid: #f5c6c2; --ink: #1c1c1c; }
+  body { font-family: 'DejaVu Sans', 'Segoe UI', Arial, sans-serif; font-size: 14px; line-height: 1.6; color: var(--ink); }
+  h1 { font-size: 28px; color: var(--red); margin-bottom: 4px; }
+  .subtitle { font-size: 15px; color: #555; margin-top: 0; margin-bottom: 18px; }
+  h2 { font-size: 21px; color: var(--red-dark); border-bottom: 3px solid var(--red-mid); padding-bottom: 4px; margin-top: 44px; }
+  h3 { font-size: 16px; color: #333; margin-top: 24px; margin-bottom: 6px; }
+  h4 { font-size: 14px; color: #555; margin-top: 16px; margin-bottom: 4px; }
+  p { margin: 7px 0; }
+  code { background: #f6f3f3; padding: 1px 5px; border-radius: 3px; font-family: 'DejaVu Sans Mono', Menlo, Consolas, monospace; font-size: 12.5px; }
+  pre { background: #faf7f7; border: 1px solid #ecd9d7; border-left: 4px solid var(--red); border-radius: 4px; padding: 10px 12px; font-family: 'DejaVu Sans Mono', Menlo, Consolas, monospace; font-size: 12px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 16px 0; font-size: 12.5px; }
+  th, td { border: 1px solid #ddd; padding: 6px 9px; text-align: left; vertical-align: top; }
+  th { background: var(--red-light); color: var(--red-dark); }
+  tr:nth-child(even) td { background: #fafafa; }
+  ul, ol { margin: 4px 0 10px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .tag { display: inline-block; color: #fff; font-size: 11px; font-weight: bold; padding: 1px 8px; border-radius: 3px; margin-bottom: 5px; }
+  .insight-box { background: var(--red-light); border: 1px solid var(--red-mid); border-left: 5px solid var(--red); border-radius: 4px; padding: 8px 14px; margin: 12px 0; }
+  .insight-box .tag { background: var(--red); }
+  .fix-box { background: #f1faf3; border: 1px solid #bfe4c7; border-left: 5px solid #2f9e4a; border-radius: 4px; padding: 8px 14px; margin: 6px 0 14px 0; }
+  .fix-box .tag { background: #2f9e4a; }
+  .note-box { background: #f4f4f6; border: 1px solid #d9d9e0; border-left: 5px solid #555a6e; border-radius: 4px; padding: 8px 14px; margin: 12px 0; }
+  .note-box .tag { background: #555a6e; }
+  .next-box { background: #fff8e6; border: 1px solid #f0dca0; border-left: 5px solid #e0a800; border-radius: 4px; padding: 8px 14px; margin: 14px 0 6px 0; font-size: 13px; }
+  .next-box .tag { background: #e0a800; color: #3a2a00; }
+  .next-box ul { margin: 4px 0 2px 0; }
+  details.deep { border: 1px dashed var(--red-mid); border-radius: 4px; margin: 12px 0; background: #fff; }
+  details.deep summary { cursor: pointer; padding: 8px 14px; font-weight: bold; color: var(--red-dark); background: #fdf3f2; border-radius: 4px; list-style: none; }
+  details.deep summary::before { content: '▸ '; }
+  details.deep[open] summary::before { content: '▾ '; }
+  details.deep .deep-body { padding: 6px 16px 10px 16px; }
+  .toc { background: #fdf6f5; border: 1px solid #ecd9d7; border-radius: 6px; padding: 14px 20px; margin: 16px 0 24px 0; }
+  .toc ol { padding-left: 18px; }
+  .small { font-size: 12px; color: #777; }
+  .fnref { color: var(--red); font-weight: bold; font-size: 0.75em; }
+  .glossary-item { margin: 0 0 10px 0; padding-left: 24px; text-indent: -24px; }
+  .glossary-item b { color: var(--red-dark); }
+  .step { margin: 22px 0 10px 0; }
+  .step-head { display: block; background: var(--red-dark); color: #fff; padding: 6px 12px; border-radius: 4px 4px 0 0; font-weight: bold; font-size: 14px; }
+  .step-head .num { display: inline-block; background: #fff; color: var(--red-dark); padding: 0 8px; border-radius: 3px; margin-right: 8px; font-size: 12.5px; }
+  .step-body { border: 1px solid var(--red-mid); border-top: none; border-radius: 0 0 4px 4px; padding: 10px 14px; }
+  .step-body pre { margin: 8px 0; }
+  .why { background: #fff8e6; border-left: 4px solid #e0a800; padding: 6px 12px; margin: 10px 0 4px 0; font-size: 13px; }
+  .why b { color: #8a6500; }
+  .file { font-family: 'DejaVu Sans Mono', Menlo, monospace; font-size: 12px; color: var(--red-dark); background: #fdecea; padding: 1px 6px; border-radius: 3px; }
+  .session-banner { background: linear-gradient(90deg, var(--red-dark), var(--red)); color: #fff; padding: 10px 16px; border-radius: 6px; margin: 28px 0 12px 0; font-size: 17px; font-weight: bold; }
+  .session-banner span { font-weight: normal; font-size: 12px; opacity: 0.9; margin-left: 10px; }
+  .page-break { display: none; }
+  .life { font-family: 'DejaVu Sans Mono', Menlo, monospace; font-size: 12px; }
+
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: #fff; }
+  .layout { display: flex; align-items: flex-start; }
+  .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; width: 300px; flex: 0 0 300px; background: var(--red-dark); color: #fff; padding: 52px 12px 16px 12px; box-sizing: border-box; font-size: 12.5px; transition: margin-left .2s; }
+  body.nav-collapsed .sidebar { margin-left: -300px; }
+  .sidebar .nav-title { font-size: 16px; font-weight: bold; color: #fff; margin-bottom: 8px; }
+  .sidebar ul { list-style: none; padding-left: 0; margin: 0; }
+  .sidebar li { margin: 1px 0; }
+  .sidebar a { color: #fff; text-decoration: none; display: block; padding: 4px 8px; border-radius: 4px; }
+  .sidebar a:hover { background: #fff; color: var(--red-dark); }
+  .sidebar .nav-steps { padding-left: 8px; border-left: 2px solid rgba(255,255,255,.4); margin: 4px 0 6px 8px; }
+  .sidebar .nav-steps a { font-size: 11.5px; color: #f5dcdc; }
+  .sidebar .nav-steps a:hover { color: var(--red-dark); }
+  .sidebar .nav-session a { color: #fff; font-weight: bold; margin-top: 6px; background: rgba(255,255,255,.12); }
+  .sidebar a .mark { display: inline-block; width: 14px; color: #fff; font-weight: bold; }
+  .sidebar a.done { opacity: .75; }
+  .sidebar a.done .mark::before { content: '✓'; }
+  .sidebar .progress { margin: 6px 0 12px 0; }
+  .sidebar .bar { height: 8px; background: rgba(255,255,255,.25); border-radius: 4px; overflow: hidden; }
+  .sidebar .fill { height: 100%; width: 0; background: #fff; transition: width .3s; }
+  .sidebar .ptext { font-size: 11px; margin-top: 4px; color: #f5dcdc; }
+  .sidebar .reset { margin-top: 16px; background: transparent; border: 1px solid rgba(255,255,255,.5); color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+  .sidebar .reset:hover { background: #fff; color: var(--red-dark); }
+  #nav-toggle { position: fixed; top: 10px; left: 10px; z-index: 20; background: var(--red); color: #fff; border: none; border-radius: 6px; width: 38px; height: 34px; font-size: 20px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  #nav-toggle:hover { background: var(--red-dark); }
+  main { flex: 1; max-width: 960px; padding: 24px 44px 90px 44px; box-sizing: border-box; min-width: 0; }
+  body.nav-collapsed main { padding-left: 64px; }
+  h2, .step, .glossary-item, .session-banner { scroll-margin-top: 16px; }
+  a { color: var(--red); }
+  a.anchor { color: #e8b4b0; text-decoration: none; margin-left: 6px; font-weight: normal; font-size: 0.8em; opacity: 0; }
+  h2:hover a.anchor, .step-head:hover a.anchor { opacity: 1; }
+  .step-head a.anchor { color: #fff; float: right; }
+  a.fnref { text-decoration: none; vertical-align: super; padding: 0 2px; }
+  a.fnref:hover { background: var(--red-light); border-radius: 3px; }
+  a.back { text-decoration: none; font-size: 0.9em; color: #d47b74; margin-left: 4px; }
+  .glossary-item:target, .step:target { outline: 2px solid var(--red); outline-offset: 4px; border-radius: 4px; }
+  h2:target { background: var(--red-light); }
+  .done-label { display: inline-block; margin-right: 8px; vertical-align: middle; }
+  .done-label input { width: 18px; height: 18px; accent-color: var(--red); cursor: pointer; vertical-align: middle; }
+  .step-head .done-label input { accent-color: #fff; }
+  h2.is-done { color: #999; border-bottom-color: #ddd; }
+  .step.is-done .step-head { background: #9e9e9e; }
+  .step.is-done .step-body { border-color: #ddd; }
+  .totop { position: fixed; right: 24px; bottom: 24px; background: var(--red); color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 20px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  @media (max-width: 900px) { .sidebar { position: fixed; z-index: 10; } main { padding: 56px 16px 60px 16px; } body.nav-collapsed main { padding-left: 16px; } }
+  @media print { .sidebar, .totop, #nav-toggle, a.anchor, a.back, .done-label { display: none; } .layout { display: block; } main { max-width: none; padding: 0; } a { color: inherit; text-decoration: none; } details.deep { border: none; } details.deep summary { display: none; } details.deep .deep-body { display: block; } }
+</style>
+</head>
+<body id="top">
+<button id="nav-toggle">✕</button>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+<div class="nav-title">🐇 RabbitMQ Lab</div>
+<div class="progress"><div class="bar"><div class="fill" id="progress-fill"></div></div><div class="ptext" id="progress-text">0 / 0</div></div>
+<ul>
+<li><a href="#sec-1" data-key="sec-1"><span class="mark"></span>1. Разбор исходного плана</a>
+</li>
+<li><a href="#sec-2" data-key="sec-2"><span class="mark"></span>2. Как RabbitMQ устроен внутри</a>
+</li>
+<li><a href="#sec-3" data-key="sec-3"><span class="mark"></span>3. Итоговая архитектура</a>
+</li>
+<li><a href="#sec-4" data-key="sec-4"><span class="mark"></span>4. Технологический стек и структура проекта</a>
+</li>
+<li><a href="#sec-5" data-key="sec-5"><span class="mark"></span>5. Транзакционная публикация событий (Outbox Pattern)</a>
+</li>
+<li><a href="#sec-6" data-key="sec-6"><span class="mark"></span>6. Сценарий</a>
+</li>
+<li><a href="#sec-7" data-key="sec-7"><span class="mark"></span>7. Retry / DLX / DLQ</a>
+</li>
+<li><a href="#sec-8" data-key="sec-8"><span class="mark"></span>8. Priority, Prefetch, Competing Consumers</a>
+</li>
+<li><a href="#sec-9" data-key="sec-9"><span class="mark"></span>9. Пошаговая сборка проекта (3 сессии)</a>
+<ul class="nav-steps">
+<li class="nav-session"><a href="#session-1">Сессия 1</a></li>
+<li><a href="#step-1-1" data-key="step-1-1"><span class="mark"></span>1.1 Создаём каталоги</a></li>
+<li><a href="#step-1-2" data-key="step-1-2"><span class="mark"></span>1.2 Топология брокера — rabbitmq/definit…</a></li>
+<li><a href="#step-1-3" data-key="step-1-3"><span class="mark"></span>1.3 rabbitmq/rabbitmq.conf</a></li>
+<li><a href="#step-1-4" data-key="step-1-4"><span class="mark"></span>1.4 docker-compose.yml</a></li>
+<li><a href="#step-1-5" data-key="step-1-5"><span class="mark"></span>1.5 Создаём Laravel 13 и образ — laravel…</a></li>
+<li><a href="#step-1-6" data-key="step-1-6"><span class="mark"></span>1.6 laravel-app/.env</a></li>
+<li><a href="#step-1-7" data-key="step-1-7"><span class="mark"></span>1.7 Поднимаем инфраструктуру и маршрутиз…</a></li>
+<li><a href="#step-1-8" data-key="step-1-8"><span class="mark"></span>1.8 Миграции</a></li>
+<li><a href="#step-1-9" data-key="step-1-9"><span class="mark"></span>1.9 Модели</a></li>
+<li><a href="#step-2-1" data-key="step-2-1"><span class="mark"></span>2.1 OutboxWriter — app/Services/OutboxWr…</a></li>
+<li><a href="#step-2-2" data-key="step-2-2"><span class="mark"></span>2.2 API — app/Http/Controllers/OrderCont…</a></li>
+<li><a href="#step-3-1" data-key="step-3-1"><span class="mark"></span>3.1 Фабрика соединения — app/Services/Am…</a></li>
+<li><a href="#step-3-2" data-key="step-3-2"><span class="mark"></span>3.2 Базовый consumer — app/Console/Comma…</a></li>
+<li><a href="#step-3-3" data-key="step-3-3"><span class="mark"></span>3.3 Outbox relay с publisher confirms — …</a></li>
+<li><a href="#step-3-4" data-key="step-3-4"><span class="mark"></span>3.4 Три воркера happy path</a></li>
+<li class="nav-session"><a href="#session-2">Сессия 2</a></li>
+<li><a href="#step-4-1" data-key="step-4-1"><span class="mark"></span>4.1 Генератор нагрузки — app/Console/Com…</a></li>
+<li><a href="#step-4-2" data-key="step-4-2"><span class="mark"></span>4.2 Competing consumers + prefetch</a></li>
+<li><a href="#step-4-3" data-key="step-4-3"><span class="mark"></span>4.3 Crash test: redelivery и идемпотентн…</a></li>
+<li><a href="#step-5-1" data-key="step-5-1"><span class="mark"></span>5.1 Ломаем почту</a></li>
+<li><a href="#step-5-2" data-key="step-5-2"><span class="mark"></span>5.2 Retry-цепочка: переопределяем onFail…</a></li>
+<li><a href="#step-5-3" data-key="step-5-3"><span class="mark"></span>5.3 Читатель DLQ — app/Console/Commands/…</a></li>
+<li><a href="#step-5-4" data-key="step-5-4"><span class="mark"></span>5.4 Слой Laravel Queue (для сравнения) —…</a></li>
+<li class="nav-session"><a href="#session-3">Сессия 3</a></li>
+<li><a href="#step-6-1" data-key="step-6-1"><span class="mark"></span>6.1 Priority с backlog</a></li>
+<li><a href="#step-6-2" data-key="step-6-2"><span class="mark"></span>6.2 Fanout — Lab/BroadcastCommand.php</a></li>
+<li><a href="#step-6-3" data-key="step-6-3"><span class="mark"></span>6.3 Production Hell — задания без подска…</a></li>
+</ul>
+</li>
+<li><a href="#sec-10" data-key="sec-10"><span class="mark"></span>10. Полный чек-лист концепций</a>
+</li>
+<li><a href="#sec-11" data-key="sec-11"><span class="mark"></span>11. Глоссарий терминов</a>
+</li>
+<li><a href="#sec-12" data-key="sec-12"><span class="mark"></span>12. Вопросы для самопроверки / собеседования</a>
+</li>
+<li><a href="#sec-13" data-key="sec-13"><span class="mark"></span>13. Что дальше</a>
+</li>
+</ul><button class="reset" id="reset-progress" title="Сбросить все галочки">Сбросить прогресс</button></nav>
+<main>
+
+<h1>🐇 RabbitMQ Lab — Mini E‑commerce Event System</h1>
+<p class="subtitle">Подробное руководство: от модели AMQP до retry-цепочек и crash-тестов. Стек: Laravel 13 + PostgreSQL 16 + RabbitMQ 4 + Mailpit.
+Каждая тема — с блоком «Под капотом» и с подготовкой к следующей. Отмечайте пройденное галочками — прогресс сохраняется в браузере.</p>
+
+<div class="note-box">
+<span class="tag">КАК ПОЛЬЗОВАТЬСЯ</span>
+<ul>
+<li><b>Разделы <a href="#sec-1">1</a>–8</b> — теория и архитектура: прочитать один раз до сборки, потом возвращаться по ссылкам.</li>
+<li><b>Раздел <a href="#sec-9">9</a></b> — сборка по шагам. У каждого шага: код → «Зачем» → «🔬 Под капотом» (раскрывается) → «Перед следующим шагом: почитать / посмотреть».</li>
+<li>Циферки у терминов ведут в глоссарий (раздел <a href="#sec-11">11</a>). Сайдбар слева сворачивается кнопкой ☰, галочки прогресса — в заголовках.</li>
+<li>Ссылки «посмотреть» ведут на поиск YouTube по точному запросу — так вы получите свежие видео, а не устаревшую ссылку.</li>
+</ul>
+</div>
+
+<div class="toc">
+<b>Содержание</b>
+<ol><li><a href="#sec-1">Разбор исходного плана: интересные нюансы и что доработано</a></li><li><a href="#sec-2">Как RabbitMQ устроен внутри: модель AMQP 0-9-1</a></li><li><a href="#sec-3">Итоговая архитектура</a></li><li><a href="#sec-4">Технологический стек и структура проекта</a></li><li><a href="#sec-5">Транзакционная публикация событий (Outbox Pattern)</a></li><li><a href="#sec-6">Сценарий: жизненный цикл заказа</a></li><li><a href="#sec-7">Retry / DLX / DLQ — как это реально работает</a></li><li><a href="#sec-8">Priority, Prefetch, Competing Consumers — уточнения</a></li><li><a href="#sec-9">Пошаговая сборка проекта (3 сессии)</a></li><li><a href="#sec-10">Полный чек-лист концепций</a></li><li><a href="#sec-11">Глоссарий терминов</a></li><li><a href="#sec-12">Вопросы для самопроверки / собеседования</a></li><li><a href="#sec-13">Что дальше: дорожная карта после лабы</a></li></ol>
+</div>
+
+<h2 id="sec-1"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-1"></label>1. Разбор исходного плана: интересные нюансы и что доработано <a class="anchor" href="#sec-1">#</a></h2>
+<p>Общая идея (учебный e-commerce с заказами, воркерами и «production hell» в конце) — хорошая и рабочая методика.
+Но у RabbitMQ есть несколько нюансов, из-за которых план стоило чуть перестроить, чтобы вы не наткнулись
+на них случайно в процессе, а разобрали осознанно.</p>
+
+<div class="insight-box">
+<span class="tag">💡 Один exchange может закрыть три сценария сразу</span>
+<p>Exchange<a class="fnref" href="#term-1" id="ref-1" title="к глоссарию">1</a> — это компонент RabbitMQ, который получает сообщение и решает,
+в какую очередь его направить. В исходном плане для событий заказа используется Topic exchange, а для отдельного события
+<code>OrderCompleted</code> вводится ещё и Fanout exchange<a class="fnref" href="#term-2" id="ref-2" title="к глоссарию">2</a>. Технически
+Topic exchange умеет всё то же самое, что и Direct — точное совпадение routing key<a class="fnref" href="#term-3" id="ref-3" title="к глоссарию">3</a> это просто частный случай биндинга без wildcard-символов
+(<code>*</code> — ровно один сегмент между точками, <code>#</code> — ноль или больше сегментов). Поэтому одного Topic exchange
+достаточно и для «точных» подписок (только <code>order.created</code>), и для «широких» (<code>order.*</code>).
+А вот публиковать одно и то же бизнес-событие в два независимых exchange отдельными вызовами <code>publish()</code> — рискованно: если один из
+вызовов не долетит (сеть, краш процесса между двумя publish), часть подписчиков узнает о событии, а часть — нет,
+и никто не будет в курсе, что что-то разошлось.</p>
+</div>
+<div class="fix-box">
+<span class="tag">РЕШЕНИЕ В ЭТОМ ПЛАНЕ</span>
+<p>Один Topic exchange (<code>orders.topic</code>) для всего жизненного цикла заказа
+(<code>order.created</code>, <code>order.reserved</code>, <code>order.paid</code>, <code>order.cancelled</code>, <code>order.completed</code>).
+Fanout остаётся отдельной темой для практики на изолированном примере (широковещательное системное уведомление).</p>
+</div>
+
+<div class="insight-box">
+<span class="tag">💡 Задержка живёт в TTL самой очереди, а не «в воздухе»</span>
+<p>У RabbitMQ нет встроенного «отложи сообщение на N секунд и попробуй снова». Задержка эмулируется через TTL<a class="fnref" href="#term-4" id="ref-4" title="к глоссарию">4</a>
+очереди: сообщение кладут в отдельную очередь-«отстойник», где оно просто ждёт, пока не истечёт TTL, а затем
+автоматически попадает дальше через Dead Letter Exchange (DLX)<a class="fnref" href="#term-5" id="ref-5" title="к глоссарию">5</a>. У трёх разных задержек по логике
+должно быть три разных «отстойника» — в исходной схеме была только одна промежуточная развилка.</p>
+</div>
+<div class="fix-box">
+<span class="tag">РЕШЕНИЕ В ЭТОМ ПЛАНЕ</span>
+<p>Три retry-очереди с TTL 10s / 30s / 300s. Почему нельзя обойтись одной очередью с разными per-message TTL — в разделе <a href="#sec-7">7</a> (это важный и неочевидный момент).</p>
+</div>
+
+<div class="insight-box">
+<span class="tag">💡 Laravel Jobs и «сырой» AMQP — два разных уровня абстракции</span>
+<p>Laravel Jobs — привычный способ: диспатчите Job, а фреймворк сам решает,
+когда его подтвердить (аналог ack), сколько раз повторить и куда сложить «упавшие» задачи
+(<code>failed_jobs</code>). Удобно, но именно поэтому на нём не видно, что происходит «под капотом» —
+ack/nack/prefetch скрыты внутри драйвера. А цель этой лабы — увидеть это своими руками.</p>
+</div>
+<div class="fix-box">
+<span class="tag">РЕШЕНИЕ В ЭТОМ ПЛАНЕ</span>
+<ul>
+<li><b>Слой «сырого» AMQP</b> — Artisan-команды на <code>php-amqplib</code>
+(<code>worker:order</code>, <code>worker:email</code>, <code>worker:analytics</code>, <code>worker:failed-email</code>), где вручную ack/nack/reject и prefetch<a class="fnref" href="#term-6" id="ref-6" title="к глоссарию">6</a>. Это основной слой.</li>
+<li><b>Слой Laravel Jobs</b> — пакет <code>vladimir-yuldashev/laravel-queue-rabbitmq</code> (v15 поддерживает Laravel 13). На нём в шаге <a href="#step-5-4">5.4</a> смотрим, что Laravel делает за вас — и заглядываем в UI, чтобы увидеть, что он создал те же TTL+DLX очереди, что вы сделали руками.</li>
+</ul>
+</div>
+
+<div class="insight-box">
+<span class="tag">💡 Надёжность бывает не только у consumer'а, но и у publisher'а</span>
+<p>ACK<a class="fnref" href="#term-7" id="ref-7" title="к глоссарию">7</a>/NACK<a class="fnref" href="#term-8" id="ref-8" title="к глоссарию">8</a> — это надёжность на стороне
+потребителя. Но что, если Laravel API не был уверен, что RabbitMQ вообще принял сообщение? Для этого
+существуют Publisher Confirms<a class="fnref" href="#term-9" id="ref-9" title="к глоссарию">9</a> — и в исходном плане про них не было ни слова,
+хотя именно они закрывают вопрос «а точно ли заказ дошёл до брокера».</p>
+</div>
+<div class="fix-box">
+<span class="tag">РЕШЕНИЕ В ЭТОМ ПЛАНЕ</span>
+<p>Publisher Confirms включены в OutboxRelay (шаг <a href="#step-3-3">3.3</a>), а на уровне архитектуры проблема решена ещё жёстче —
+через Outbox Pattern<a class="fnref" href="#term-10" id="ref-10" title="к глоссарию">10</a> (раздел <a href="#sec-5">5</a>).</p>
+</div>
+
+<div class="insight-box">
+<span class="tag">💡 Приоритет заметен не всегда — и это нормально</span>
+<p>Priority queue<a class="fnref" href="#term-11" id="ref-11" title="к глоссарию">11</a> влияет на порядок только если в очереди уже скопился backlog<a class="fnref" href="#term-12" id="ref-12" title="к глоссарию">12</a>. Если consumer моментально разбирает всё, что приходит, ему не из чего
+выбирать — сообщения идут в порядке поступления. Это не баг: приоритет — про выбор из накопленной очереди, а не про мгновенную сортировку потока.</p>
+</div>
+
+<div class="insight-box">
+<span class="tag">💡 Объём материала на 4 часа — это на самом деле 3 сессии</span>
+<p>Инфраструктура, три типа exchange, ACK/NACK/prefetch/competing consumers<a class="fnref" href="#term-13" id="ref-13" title="к глоссарию">13</a>,
+retry+TTL+DLX+DLQ<a class="fnref" href="#term-14" id="ref-14" title="к глоссарию">14</a>, идемпотентность<a class="fnref" href="#term-15" id="ref-15" title="к глоссарию">15</a>, priority
+и crash-тесты — под конец такого марафона уже копипастят, не разбираясь. Раздел <a href="#sec-9">9</a> разбит на три сессии.</p>
+</div>
+
+<div class="note-box">
+<span class="tag">ЧТО БЫЛО ХОРОШО И ОСТАВЛЕНО</span>
+<ul>
+<li>Учебный проект через реальный e-commerce сценарий — наглядно.</li>
+<li>Специально ломать Email Worker и наблюдать redelivery<a class="fnref" href="#term-16" id="ref-16" title="к глоссарию">16</a>/DLQ — отличная практика.</li>
+<li>Идемпотентность через таблицу <code>processed_messages</code> — реальный production-паттерн.</li>
+<li>Crash test с <code>docker compose kill</code> — must-have.</li>
+</ul>
+</div>
+
+<div class="next-box"><span class="tag">ПЕРЕД РАЗДЕЛОМ <a href="#sec-2">2</a></span>
+<ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/tutorials/amqp-concepts" target="_blank">AMQP 0-9-1 Model Explained</a> — официальное описание модели (10 минут). Раздел <a href="#sec-2">2</a> ниже — это она же, но на русском и с уклоном в наш проект.</li>
+<li>▶ Посмотреть: <a href="https://www.youtube.com/results?search_query=RabbitMQ+in+100+seconds" target="_blank">«RabbitMQ in 100 seconds»</a> — чтобы картинка exchange → queue → consumer была в голове до того, как читать про фреймы и каналы.</li>
+</ul></div>
+
+<h2 id="sec-2"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-2"></label>2. Как RabbitMQ устроен внутри: модель AMQP 0-9-1 <a class="anchor" href="#sec-2">#</a></h2>
+<p>Если раньше вы делали только <code>publish()</code> / <code>consume()</code>, этот раздел — фундамент для всего остального.
+Без него ack, prefetch и confirms будут выглядеть как «магические флаги»; с ним — как очевидные следствия устройства протокола.</p>
+
+<h3>2.1. Connection, Channel и фреймы</h3>
+<p><b>Connection</b> — это одно TCP-соединение между вашим процессом и брокером. Устанавливать его дорого (handshake, аутентификация, согласование параметров),
+поэтому его держат открытым всё время жизни процесса. <b>Channel</b> — «виртуальное соединение» внутри TCP-соединения: лёгкий,
+создаётся мгновенно, и почти все операции (publish, consume, ack, qos) выполняются именно на канале. Один процесс = одно соединение = несколько каналов
+(например, отдельный канал на publish и отдельный на consume). Каналы <b>не потокобезопасны</b>: два потока не должны писать в один канал.</p>
+<p>Всё общение — это <b>фреймы</b> (frames): небольшие бинарные пакеты с заголовком (тип, номер канала, размер) и телом. Одно опубликованное сообщение —
+это минимум три фрейма: <code>method frame</code> (<code>basic.publish</code>, exchange, routing key), <code>header frame</code> (свойства: content-type,
+delivery_mode, message_id, headers…) и один или несколько <code>body frame</code> (само тело, порезанное по frame_max, обычно 128 КБ). Когда в шаге <a href="#step-3-2">3.2</a>
+вы увидите <code>$channel->wait()</code> — это буквально «прочитать следующий фрейм из сокета и вызвать обработчик».</p>
+<pre class="life">
+Процесс PHP ──TCP──► RabbitMQ
+   │ Connection (один на процесс)
+   ├── Channel 1  : basic.publish ... (relay)
+   ├── Channel 2  : basic.consume + basic.ack (worker)
+   └── heartbeat frames каждые N секунд в обе стороны
+</pre>
+
+<h3>2.2. Четыре типа exchange</h3>
+<table>
+<tr><th>Тип</th><th>Как маршрутизирует</th><th>Когда использовать</th><th>В нашем проекте</th></tr>
+<tr><td><b>direct</b></td><td>routing key сообщения == routing key биндинга</td><td>точечная доставка, «команды»</td><td><code>email.retry</code>, <code>email.dlx</code></td></tr>
+<tr><td><b>topic</b></td><td>routing key сравнивается с паттерном (<code>*</code>, <code>#</code>)</td><td>события с иерархическими именами</td><td><code>orders.topic</code> — основной</td></tr>
+<tr><td><b>fanout</b></td><td>всем привязанным очередям, ключ игнорируется</td><td>широковещание</td><td><code>system.broadcast</code></td></tr>
+<tr><td><b>headers</b></td><td>по совпадению заголовков (x-match: all/any)</td><td>редко; когда ключ не строка</td><td>не используем, но знать надо</td></tr>
+</table>
+<p>Тонкость topic: <code>order.*</code> совпадёт с <code>order.created</code>, но <b>не</b> с <code>order.item.added</code> (два сегмента). А <code>order.#</code> совпадёт с обоими и даже с просто <code>order</code>. Внутри брокер держит биндинги topic-exchange в префиксном дереве (trie), так что маршрутизация быстра даже при тысячах биндингов.</p>
+<p>Ещё один момент: если сообщение опубликовано в exchange, а <b>ни одна очередь под routing key не подошла</b>, сообщение молча уничтожается. Никакой ошибки издатель не получит — если только не выставил флаг <code>mandatory</code>, тогда брокер вернёт его обратно через <code>basic.return</code>. Это частая причина «я публикую, а ничего не приходит»: опечатка в routing key.</p>
+
+<h3>2.3. Очередь, биндинг и что значит «durable»</h3>
+<p>Очередь — единственное место, где сообщение реально <b>хранится</b>. Exchange только маршрутизирует. Биндинг<a class="fnref" href="#term-17" id="ref-17" title="к глоссарию">17</a> — правило «из exchange E в очередь Q, если ключ подходит под K».
+Одна очередь может быть привязана к нескольким exchange, а один exchange — к многим очередям. Если одно сообщение подходит под несколько биндингов одной очереди, в очередь оно попадёт <b>один раз</b>.</p>
+<p>Три независимых флага, которые часто путают:</p>
+<ul>
+<li><b>durable queue</b><a class="fnref" href="#term-21" id="ref-21" title="к глоссарию">21</a> — метаданные очереди переживут перезапуск брокера. Не про сообщения!</li>
+<li><b>persistent message</b><a class="fnref" href="#term-20" id="ref-20" title="к глоссарию">20</a> (<code>delivery_mode=2</code>) — сообщение записывается на диск. Бесполезно в non-durable очереди: очередь исчезнет вместе с содержимым.</li>
+<li><b>publisher confirm</b> — брокер сообщил издателю, что взял ответственность за сообщение (для persistent — после записи на диск).</li>
+</ul>
+<p>Только все три вместе дают «сообщение не потеряется при рестарте брокера». И даже так остаётся окно: брокер пишет на диск батчами (fsync раз в несколько сотен миллисекунд), а confirm приходит после fsync — вот почему confirm может «задержаться».</p>
+
+<h3>2.4. Сообщение: свойства, заголовки, тело</h3>
+<table>
+<tr><th>Что</th><th>Где живёт</th><th>Примеры</th></tr>
+<tr><td>Body</td><td>тело, байты; брокеру безразлично содержимое</td><td>JSON заказа</td></tr>
+<tr><td>Properties (фиксированный набор)</td><td>header frame</td><td><code>content_type</code>, <code>delivery_mode</code>, <code>priority</code>, <code>message_id</code>, <code>timestamp</code>, <code>expiration</code>, <code>correlation_id</code>, <code>reply_to</code></td></tr>
+<tr><td>Headers (произвольные)<a class="fnref" href="#term-18" id="ref-18" title="к глоссарию">18</a></td><td>свойство <code>headers</code> — таблица ключ→значение</td><td><code>x-retry-count</code>, <code>x-last-error</code>, <code>x-death</code> (ставит брокер)</td></tr>
+</table>
+<p>Свойства сообщение несёт с собой везде: в retry-очередь, в DLX, при redelivery. Поэтому <code>message_id</code>, выставленный один раз в relay, доедет до любого consumer'а — на этом держится идемпотентность.</p>
+
+<h3>2.5. Push против pull: consume и get</h3>
+<p>Есть два способа получить сообщение. <code>basic.get</code> — pull: «дай одно, если есть». Медленно (round-trip на каждое сообщение) и подходит только для скриптов-однодневок и Management UI.
+<code>basic.consume</code> — push: вы регистрируете <b>consumer</b> (с consumer_tag) на очередь, и брокер сам <b>толкает</b> сообщения в канал по мере появления, соблюдая prefetch. Все воркеры в проекте — consume.</p>
+
+<h3>2.6. Delivery tag, ack и что видит брокер</h3>
+<p>Каждое сообщение, отданное consumer'у, получает <b>delivery_tag</b> — монотонно растущее число, уникальное <b>в рамках канала</b>. Именно его вы возвращаете в <code>basic.ack(delivery_tag)</code>. Брокер ведёт для каждого канала список «отдано, но не подтверждено» (unacked). Пока сообщение в этом списке, никто другой его не получит.</p>
+<p>Три события, после которых unacked-сообщения возвращаются в очередь (и получают флаг <code>redelivered=true</code>): закрытие канала, обрыв соединения (в том числе по heartbeat), и явный <code>nack/reject</code> с <code>requeue=true</code>. Это и есть механика redelivery — никакой «магии», просто список на стороне брокера.</p>
+<p>Флаг <code>multiple=true</code> у ack означает «подтверждаю всё до этого тега включительно» — так делают батч-подтверждения. В лабе мы подтверждаем по одному, чтобы каждое событие было видно.</p>
+
+<h3>2.7. QoS / prefetch</h3>
+<p><code>basic.qos(prefetch_count=N)</code> говорит брокеру: «не отдавай этому consumer'у больше N неподтверждённых сообщений». Это не про скорость сети, а про <b>справедливость</b> и <b>риск</b>: чем больше N, тем больше сообщений «зависнут» при падении процесса и тем неравномернее нагрузка между воркерами. Prefetch=1 — самый честный round-robin, но с оверхедом round-trip'а на каждое сообщение. Глобальный prefetch (на канал) в RabbitMQ 4 удалён; остался только per-consumer.</p>
+
+<h3>2.8. Жизнь одного сообщения в нашем проекте</h3>
+<pre class="life">
+1. relay: basic.publish(exchange=orders.topic, key=order.created, props{message_id=UUID, delivery_mode=2})
+2. брокер: routing по биндингам → копии в order.queue, email.queue, analytics.queue
+3. брокер: persistent → запись в message store, fsync батчем
+4. брокер → relay: basic.ack(seq_no)          ← publisher confirm
+5. брокер → worker:order: basic.deliver(delivery_tag=17, redelivered=false) + header + body
+6. worker: DB transaction (reserve stock + processed_messages) COMMIT
+7. worker → брокер: basic.ack(17)
+8. брокер: удаляет сообщение из order.queue (в email.queue и analytics.queue живут свои копии)
+</pre>
+<p>Если между 6 и 7 процесс умер: соединение рвётся → брокер видит канал закрытым → тег 17 возвращается в очередь как redelivered → другой воркер получает его на шаге 5 → на шаге 6 видит маркер в <code>processed_messages</code> → ack без повторного списания.</p>
+
+<h3>2.9. Virtual host, пользователи, права</h3>
+<p>vhost — изолированное пространство имён (свои exchange/queue/users). У нас один — <code>/</code>. Пользователю нужны три права на vhost: <b>configure</b> (declare/delete), <b>write</b> (publish, bind), <b>read</b> (consume, get). Наш <code>lab</code> — администратор, в проде воркерам дают только read на свои очереди.</p>
+
+<div class="next-box"><span class="tag">ПЕРЕД РАЗДЕЛОМ <a href="#sec-3">3</a></span>
+<ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/tutorials/tutorial-five-php" target="_blank">Tutorial 5 (PHP): Topics</a> — официальный пример topic-маршрутизации на php-amqplib; после него архитектура в разделе <a href="#sec-3">3</a> читается как продолжение.</li>
+<li>▶ Посмотреть: <a href="https://www.youtube.com/results?search_query=RabbitMQ+exchange+types+direct+topic+fanout+headers+explained" target="_blank">«RabbitMQ exchange types explained»</a>.</li>
+</ul></div>
+
+<h2 id="sec-3"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-3"></label>3. Итоговая архитектура <a class="anchor" href="#sec-3">#</a></h2>
+<pre>
+                         Laravel 13 API
+                             │
+                        POST /api/orders
+                             │
+                             ▼
+                 ┌───────────────────────┐
+                 │   PostgreSQL (TX)     │
+                 │  orders + outbox      │  ← запись в одной транзакции
+                 └───────────┬───────────┘
+                             │
+                 worker:outbox-relay (контейнер)
+                             │  publish + publisher confirm
+                             ▼
+                 ┌────────────────────────────────┐
+                 │ RabbitMQ 4                     │
+                 │ exchange: orders.topic (topic) │
+                 └───────────┬────────────────────┘
+                             │
+   routing key: order.created / order.reserved / order.paid / order.cancelled / order.completed
+                             │
+     ┌───────────────────────┼─────────────────────────┐
+     │ binding: order.created│ binding: order.created    │ binding: order.*
+     ▼                       ▼                           ▼
+ order.queue            email.queue                analytics.queue
+ (x-max-priority=10)         │                           │
+ ┌───┼───┐                   │                           │
+ ▼   ▼   ▼                   ▼                           ▼
+ W1  W2  W3            worker:email               worker:analytics
+     │                       │                           │
+     ▼                       ▼                           ▼
+ PostgreSQL               Mailpit                    PostgreSQL
+ (reserve stock)      (retry-цепочка, раздел 7)   (order_events)
+</pre>
+<table>
+<tr><th>Очередь</th><th>Routing key биндинга</th><th>Что ловит</th></tr>
+<tr><td><code>order.queue</code></td><td><code>order.created</code></td><td>только создание — резервирование товара</td></tr>
+<tr><td><code>email.queue</code></td><td><code>order.created</code></td><td>только создание — письмо «заказ оформлен»</td></tr>
+<tr><td><code>analytics.queue</code></td><td><code>order.*</code></td><td>все статусы жизненного цикла</td></tr>
+</table>
+<p>Fanout — отдельное упражнение: exchange <code>system.broadcast</code> с тремя demo-очередями <code>broadcast.a/b/c</code>. Одна публикация — три копии.</p>
+
+<details class="deep"><summary>🔬 Под капотом: почему три очереди, а не одна с тремя consumer'ами</summary><div class="deep-body">
+<p>Частая ошибка новичков: сделать одну очередь <code>orders</code> и подписать на неё и email-воркер, и analytics-воркер. Но несколько consumer'ов на <b>одной</b> очереди — это competing consumers: каждое сообщение получит <b>кто-то один</b>. Email-воркер заберёт половину заказов, аналитика — другую половину, и оба будут «терять» данные.</p>
+<p>Правило: <b>одна очередь = один тип обработки</b>. Хотите, чтобы одно событие обработали три разные подсистемы — три очереди с тремя биндингами. Хотите масштабировать одну подсистему — несколько процессов на её очереди. Exchange делает копии на уровне маршрутизации (шаг 2 в «жизни сообщения»), и это бесплатно: тело хранится один раз, очереди держат ссылки.</p>
+</div></details>
+
+<div class="next-box"><span class="tag">ПЕРЕД РАЗДЕЛОМ <a href="#sec-4">4</a></span>
+<ul>
+<li>📖 Почитать: <a href="https://github.com/php-amqplib/php-amqplib#readme" target="_blank">README php-amqplib</a> — пробегитесь по примерам <code>basic_consume</code>, <code>basic_qos</code>, <code>confirm_select</code>: это ровно те методы, которые будут в коде воркеров.</li>
+<li>📖 Почитать: <a href="https://laravel.com/docs/13.x/artisan#writing-commands" target="_blank">Laravel 13: Artisan Commands</a> — воркеры будут командами.</li>
+</ul></div>
+
+<h2 id="sec-4"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-4"></label>4. Технологический стек и структура проекта <a class="anchor" href="#sec-4">#</a></h2>
+<table>
+<tr><th>Компонент</th><th>Выбор</th><th>Зачем</th></tr>
+<tr><td>API + доменная логика</td><td>Laravel 13 (PHP 8.4)</td><td>уже знаком; воркеры тоже живут здесь как Artisan-команды</td></tr>
+<tr><td>Низкоуровневый AMQP</td><td>php-amqplib/php-amqplib ^3.7</td><td>ручной ack/nack/prefetch/confirms</td></tr>
+<tr><td>Jobs-слой (сравнение)</td><td>vladimir-yuldashev/laravel-queue-rabbitmq ^15</td><td>показать «удобный» путь через Laravel Queue</td></tr>
+<tr><td>БД</td><td>PostgreSQL 16</td><td>orders, outbox, processed_messages, order_events</td></tr>
+<tr><td>Брокер</td><td>rabbitmq:4-management</td><td>UI на :15672; топология импортируется из definitions.json</td></tr>
+<tr><td>Почта</td><td>axllent/mailpit</td><td>SMTP :1025, веб-ящик :8025, есть HTTP API для проверок</td></tr>
+</table>
+<pre>
+rabbitmq-lab/
+├── docker-compose.yml
+├── rabbitmq/
+│   ├── rabbitmq.conf              (load_definitions)
+│   └── definitions.json           (exchanges, queues, bindings, DLX/TTL)
+└── laravel-app/                   ← корень Laravel 13
+    ├── Dockerfile
+    ├── .env
+    ├── config/
+    │   ├── rabbitmq.php           (host/port/prefetch для php-amqplib)
+    │   └── lab.php                (флаги симуляции сбоев)
+    ├── database/migrations/
+    ├── routes/api.php
+    └── app/
+        ├── Http/Controllers/OrderController.php
+        ├── Models/  (Product, Order, OrderItem, OutboxMessage, ProcessedMessage, OrderEvent)
+        ├── Services/
+        │   ├── Amqp/AmqpConnectionFactory.php
+        │   └── OutboxWriter.php
+        ├── Jobs/SendOrderEmailJob.php          (слой Laravel Queue)
+        └── Console/Commands/
+            ├── Workers/
+            │   ├── AbstractAmqpWorker.php      (базовый consumer)
+            │   ├── OutboxRelayCommand.php      worker:outbox-relay
+            │   ├── OrderWorkerCommand.php      worker:order
+            │   ├── EmailWorkerCommand.php      worker:email
+            │   ├── AnalyticsWorkerCommand.php  worker:analytics
+            │   ├── FailedEmailWorkerCommand.php worker:failed-email
+            │   └── BroadcastDemoWorkerCommand.php worker:broadcast {queue}
+            └── Lab/
+                ├── PublishOrdersCommand.php    lab:orders {count} {--priority=}
+                └── BroadcastCommand.php        lab:broadcast {text}
+</pre>
+<div class="note-box"><span class="tag">ПОЧЕМУ ВОРКЕРЫ — ARTISAN-КОМАНДЫ</span>
+<p>Отдельный PHP-скрипт пришлось бы вручную «поднимать» Laravel ради Eloquent и конфига. Artisan-команда получает всё бесплатно, а в docker-compose каждая запускается <b>своим контейнером</b> — независимые процессы, которые можно масштабировать и убивать по отдельности. Код consumer'а при этом — чистый php-amqplib, без Laravel Queue.</p></div>
+
+<div class="next-box"><span class="tag">ПЕРЕД РАЗДЕЛОМ <a href="#sec-5">5</a></span>
+<ul>
+<li>📖 Почитать: <a href="https://microservices.io/patterns/data/transactional-outbox.html" target="_blank">Transactional Outbox (microservices.io)</a> — каноническое описание паттерна с диаграммой; раздел <a href="#sec-5">5</a> — его применение к нашему API.</li>
+<li>▶ Посмотреть: <a href="https://www.youtube.com/results?search_query=transactional+outbox+pattern+explained" target="_blank">«Transactional outbox pattern explained»</a>.</li>
+</ul></div>
+
+<h2 id="sec-5"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-5"></label>5. Транзакционная публикация событий (Outbox Pattern) <a class="anchor" href="#sec-5">#</a></h2>
+<h3>Проблема без Outbox — «dual write»</h3>
+<pre>
+BEGIN TRANSACTION
+  INSERT INTO orders (...)
+COMMIT
+  │
+  ├── публикуем в RabbitMQ  ← процесс упал именно тут?
+  │                            Заказ создан, событие никогда не уйдёт.
+  ▼
+(несогласованное состояние)
+</pre>
+<p>Обратный порядок (сначала publish, потом commit) не лучше: событие ушло, а транзакция откатилась — воркеры обрабатывают заказ, которого нет. Две системы (БД и брокер) не умеют коммитить атомарно вместе — это и называется проблемой dual write.</p>
+<h3>Решение с Outbox</h3>
+<pre>
+BEGIN TRANSACTION
+  INSERT INTO orders (...)
+  INSERT INTO outbox_messages (id, routing_key, payload, status='pending')
+COMMIT                                   ← атомарно, одна БД
+
+worker:outbox-relay (отдельный контейнер, поллинг раз в секунду):
+  SELECT ... WHERE status='pending' ORDER BY created_at LIMIT 50
+     │
+     ▼
+  basic_publish в orders.topic + wait_for_pending_acks()   ← publisher confirm
+     │
+     ├── confirm получен  → UPDATE status='sent', published_at=now()
+     └── confirm не пришёл → остаётся pending, отправим на следующем проходе
+</pre>
+<details class="deep"><summary>🔬 Под капотом: гарантии, порядок, несколько релеев, очистка</summary><div class="deep-body">
+<p><b>Какую гарантию даёт outbox.</b> «Если данные закоммичены — событие будет опубликовано <i>хотя бы один раз</i>». Не «ровно один раз»: релей может упасть между publish и UPDATE, и тогда опубликует повторно. Поэтому outbox всегда идёт в паре с идемпотентным consumer'ом.</p>
+<p><b>Порядок.</b> Один релей, <code>ORDER BY created_at</code> — события уходят в порядке создания. Но порядок в очереди гарантируется только в рамках одной очереди и одного consumer'а; с тремя order-worker'ами <code>order.created</code> #5 может обработаться раньше #4. Если порядок важен для одного заказа — все события одного заказа должны попадать к одному consumer'у (в RabbitMQ для этого есть Consistent Hash Exchange или Single Active Consumer). Для лабы это не нужно, но вопрос на собеседовании популярный.</p>
+<p><b>Несколько релеев.</b> Два релея возьмут одни и те же pending-строки. Решение — <code>SELECT ... FOR UPDATE SKIP LOCKED</code>: каждый берёт «свои» строки, не блокируясь. Цена — потеря глобального порядка.</p>
+<p><b>Поллинг vs LISTEN/NOTIFY.</b> Раз в секунду — просто и достаточно. PostgreSQL умеет <code>NOTIFY outbox</code> из триггера, чтобы релей просыпался мгновенно — можно сделать домашним заданием.</p>
+<p><b>Очистка.</b> Таблица растёт. Старые <code>sent</code>-строки удаляют по cron (например, старше 7 дней). То же для <code>processed_messages</code> — окно дедупликации не обязано быть вечным.</p>
+</div></details>
+
+<div class="next-box"><span class="tag">ПЕРЕД РАЗДЕЛОМ <a href="#sec-6">6</a></span>
+<ul>
+<li>📖 Почитать: <a href="https://laravel.com/docs/13.x/database#database-transactions" target="_blank">Laravel 13: Database Transactions</a> — <code>DB::transaction()</code> и что происходит при исключении внутри.</li>
+</ul></div>
+
+<h2 id="sec-6"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-6"></label>6. Сценарий: жизненный цикл заказа <a class="anchor" href="#sec-6">#</a></h2>
+<pre>
+POST /api/orders
+{ "user_id": 15, "priority": 0,
+  "items": [ { "product_id": 1, "quantity": 2 }, { "product_id": 2, "quantity": 1 } ] }
+</pre>
+<ol>
+<li>API в одной транзакции создаёт <code>Order (status=pending)</code> + outbox-запись <code>order.created</code>.</li>
+<li><code>worker:outbox-relay</code> публикует в <code>orders.topic</code> с confirm.</li>
+<li><b>order.queue → worker:order</b>: проверка идемпотентности → резерв товара (<code>SELECT ... FOR UPDATE</code>) → статус <code>reserved</code> → outbox <code>order.reserved</code>.</li>
+<li><b>email.queue → worker:email</b>: письмо в Mailpit; при сбое — retry-цепочка (раздел <a href="#sec-7">7</a>).</li>
+<li><b>analytics.queue → worker:analytics</b>: строка в <code>order_events</code> на каждое <code>order.*</code>.</li>
+</ol>
+<div class="next-box"><span class="tag">ПЕРЕД РАЗДЕЛОМ <a href="#sec-7">7</a></span>
+<ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/dlx" target="_blank">Dead Letter Exchanges</a> и <a href="https://www.rabbitmq.com/docs/ttl" target="_blank">Time-To-Live and Expiration</a> — два коротких официальных документа. Обратите внимание на фразу про «только когда expired-сообщение достигает головы очереди» — она объясняет, почему нам нужны три очереди.</li>
+<li>▶ Посмотреть: <a href="https://www.youtube.com/results?search_query=RabbitMQ+dead+letter+exchange+retry+TTL" target="_blank">«RabbitMQ dead letter exchange retry TTL»</a>.</li>
+</ul></div>
+
+<h2 id="sec-7"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-7"></label>7. Retry / DLX / DLQ — как это реально работает <a class="anchor" href="#sec-7">#</a></h2>
+<div class="insight-box">
+<span class="tag">💡 Почему не просто nack</span>
+<p>У очереди может быть <b>только один</b> DLX и один статический routing key для dead-lettering. То есть <code>nack(requeue=false)</code>
+из <code>email.queue</code> всегда улетит в одно и то же место — он не умеет решать «первая попытка → подождать 10 сек, вторая → 30».
+Поэтому выбор retry-очереди делает <b>сам воркер</b>: читает счётчик из заголовка, публикует
+копию в нужную retry-очередь и подтверждает оригинал. А <i>возврат</i> из retry-очереди обратно в
+<code>email.queue</code> — уже чистая работа TTL + DLX, без участия кода.</p>
+</div>
+<pre>
+email.queue ──► worker:email бросает RuntimeException('SMTP unavailable')
+                   │
+                   │ attempt = x-retry-count + 1
+                   │ копия → exchange email.retry, routing key "retry.{attempt}"
+                   │ оригинал → ACK
+                   ▼
+   attempt 1 ► email.retry.1  (x-message-ttl=10000,  DLX=email.dlx, dl-routing-key=email)
+   attempt 2 ► email.retry.2  (x-message-ttl=30000,  ...)
+   attempt 3 ► email.retry.3  (x-message-ttl=300000, ...)
+                   │  TTL истёк → RabbitMQ сам dead-letter'ит в email.dlx
+                   ▼
+              email.dlx (direct) ──key "email"──► email.queue   (следующая попытка)
+                                 ──key "dlq"  ──► email.dlq     (attempt > 3: воркер публикует сюда)
+                                                     │
+                                                     ▼
+                                          worker:failed-email печатает:
+                                          message_id, x-retry-count, x-last-error, body
+</pre>
+<details class="deep"><summary>🔬 Под капотом: почему одна retry-очередь с per-message TTL не сработает</summary><div class="deep-body">
+<p>Казалось бы, проще сделать одну очередь <code>email.retry</code> и выставлять каждому сообщению своё <code>expiration</code> (10 с, 30 с, 300 с). Но RabbitMQ удаляет просроченные сообщения <b>только когда они оказываются в голове очереди</b>. Очередь — это FIFO. Если первым лежит сообщение с TTL 300 с, а за ним — с TTL 10 с, второе будет ждать все 300 секунд: оно давно «протухло», но брокер до него не добрался. Это называется head-of-line blocking. Одна очередь на одну задержку — единственный корректный способ без плагина.</p>
+<p><b>Что кладёт брокер в x-death.</b> При каждом dead-lettering RabbitMQ добавляет (или инкрементирует) в заголовке <code>x-death</code> запись: из какой очереди, по какой причине (<code>expired</code>, <code>rejected</code>, <code>maxlen</code>), сколько раз, с каким исходным routing key, когда. Открыв сообщение в UI в <code>email.retry.2</code>, вы увидите там историю: <code>email.retry.1 / expired / count=1</code>. Это бесплатная трассировка; наш <code>x-retry-count</code> — просто более удобная для кода версия того же.</p>
+<p><b>Почему копия, а не requeue.</b> Requeue вернёт сообщение в <i>ту же</i> очередь мгновенно — без задержки и без счётчика. А ещё сообщение с <code>requeue</code> ставится на прежнее место в очереди, то есть будет обработано первым, и при постоянной ошибке заблокирует всё остальное. Копия с инкрементированным заголовком в другой очереди — единственный способ «отложить и посчитать».</p>
+<p><b>Порядок «publish копии → ack оригинала».</b> Если упасть между ними — брокер передоставит оригинал, вы опубликуете вторую копию. Две копии с одним <code>message_id</code>. Когда SMTP починится, первая копия обработается, а вторая упрётся в <code>processed_messages</code>. Обратный порядок (ack, потом publish) хуже: упали после ack — сообщение потеряно навсегда.</p>
+</div></details>
+<div class="note-box"><span class="tag">АЛЬТЕРНАТИВА</span>
+<p>Плагин <code>rabbitmq-delayed-message-exchange</code> убирает три очереди: одно сообщение с заголовком <code>x-delay</code>. Но у него есть ограничения (не реплицируется в кластере, хранит отложенные сообщения в Mnesia на одной ноде), поэтому в серьёзном проде часто всё равно делают TTL+DLX или уходят в Streams.</p></div>
+
+<div class="next-box"><span class="tag">ПЕРЕД РАЗДЕЛОМ <a href="#sec-8">8</a></span>
+<ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/consumer-prefetch" target="_blank">Consumer Prefetch</a> и <a href="https://www.rabbitmq.com/docs/priority" target="_blank">Priority Queue Support</a>.</li>
+<li>▶ Посмотреть: <a href="https://www.youtube.com/results?search_query=RabbitMQ+prefetch+count+explained+fair+dispatch" target="_blank">«RabbitMQ prefetch fair dispatch»</a>.</li>
+</ul></div>
+
+<h2 id="sec-8"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-8"></label>8. Priority, Prefetch, Competing Consumers — уточнения <a class="anchor" href="#sec-8">#</a></h2>
+<div class="note-box"><span class="tag">PRIORITY</span>
+<p><code>order.queue</code> объявлена с <code>x-max-priority=10</code>. Внутри брокер держит для такой очереди по подочереди на каждый уровень приоритета и при выдаче берёт из самой «высокой» непустой. Именно поэтому эффект виден только при backlog. Максимум — 255, но документация советует 1–10: каждый уровень стоит памяти и CPU. Сообщение без свойства <code>priority</code> считается приоритетом 0; приоритет выше максимума очереди «обрезается» до максимума.</p></div>
+<div class="note-box"><span class="tag">PREFETCH</span>
+<p>Один тест (1000 сообщений, 3 воркера) с <code>WORKER_PREFETCH=1</code>, потом 10, потом 100. В UI смотрим unacked по каждому consumer'у и метрику <b>consumer utilisation</b> у очереди: близко к 100% — воркеры заняты; низко — брокер не успевает их «кормить» или они ждут.</p></div>
+<div class="note-box"><span class="tag">COMPETING CONSUMERS</span>
+<p><code>docker compose up --scale order-worker=3</code> — три процесса на одной очереди. Распределение — round-robin среди тех consumer'ов, у кого есть свободный «слот» prefetch. Быстрый воркер получит больше, медленный — меньше: это и есть fair dispatch.</p></div>
+
+<div class="next-box"><span class="tag">ПЕРЕД СБОРКОЙ (РАЗДЕЛ <a href="#sec-9">9</a>)</span>
+<ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/definitions" target="_blank">Definitions export/import</a> — как брокер загружает топологию из JSON (шаг <a href="#step-1-2">1.2</a>).</li>
+<li>📖 Почитать: <a href="https://laravel.com/docs/13.x/installation" target="_blank">Laravel 13: Installation</a> — убедитесь, что на MacBook стоят PHP 8.4 и Composer.</li>
+<li>▶ Посмотреть: <a href="https://www.youtube.com/results?search_query=docker+compose+healthcheck+depends_on+condition+service_healthy" target="_blank">«docker compose healthcheck depends_on»</a> — в compose-файле это используется.</li>
+</ul></div>
+
+<h2 id="sec-9"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-9"></label>9. Пошаговая сборка проекта (3 сессии) <a class="anchor" href="#sec-9">#</a></h2>
+<p>Каждый шаг: что делаем → команда/файл → <b>зачем</b> → <b>под капотом</b> → что почитать перед следующим. Пути указаны относительно <code>rabbitmq-lab/</code>.</p>
+<div class="note-box"><span class="tag">ПРО LARAVEL 13</span>
+<p>Используется современная структура Laravel (11+): <code>bootstrap/app.php</code>, <code>routes/api.php</code> подключается через
+<code>php artisan install:api</code>, Artisan-команды автоматически подхватываются из <code>app/Console/Commands</code>.
+Если в вашей версии что-то называется чуть иначе — сверьтесь с <code>laravel.com/docs/13.x</code>; логика шагов не меняется.</p></div>
+
+<div class="session-banner" id="session-1">СЕССИЯ <a href="#session-1">1</a> — Инфраструктура, топология, happy path <span>~3 часа</span></div>
+
+<div class="step" id="step-1-1"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-1"></label><span class="num">Шаг 1.1</span>Создаём каталоги<a class="anchor" href="#step-1-1">#</a></span><div class="step-body">
+<pre><code>mkdir -p rabbitmq-lab/rabbitmq
+cd rabbitmq-lab</code></pre>
+<div class="why"><b>Зачем:</b> <code>rabbitmq/</code> хранит конфиг и топологию брокера как код. Папка <code>laravel-app/</code> появится на шаге 1.5.</div>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ 1.2</span><ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/queues#optional-arguments" target="_blank">Queues → Optional Arguments</a> — что такое <code>x-*</code>-аргументы очереди и почему их нельзя поменять после создания.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-1-2"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-2"></label><span class="num">Шаг 1.2</span>Топология брокера — <span class="file">rabbitmq/definitions.json<a class="anchor" href="#step-1-2">#</a></span></span><div class="step-body">
+<pre><code>{
+  "vhosts": [{ "name": "/" }],
+  "exchanges": [
+    { "name": "orders.topic",     "vhost": "/", "type": "topic",  "durable": true },
+    { "name": "email.retry",      "vhost": "/", "type": "direct", "durable": true },
+    { "name": "email.dlx",        "vhost": "/", "type": "direct", "durable": true },
+    { "name": "system.broadcast", "vhost": "/", "type": "fanout", "durable": true }
+  ],
+  "queues": [
+    { "name": "order.queue",     "vhost": "/", "durable": true, "arguments": { "x-queue-type": "classic", "x-max-priority": 10 } },
+    { "name": "email.queue",     "vhost": "/", "durable": true, "arguments": { "x-queue-type": "classic" } },
+    { "name": "analytics.queue", "vhost": "/", "durable": true, "arguments": { "x-queue-type": "classic" } },
+
+    { "name": "email.retry.1", "vhost": "/", "durable": true, "arguments": {
+        "x-queue-type": "classic", "x-message-ttl": 10000,
+        "x-dead-letter-exchange": "email.dlx", "x-dead-letter-routing-key": "email" } },
+    { "name": "email.retry.2", "vhost": "/", "durable": true, "arguments": {
+        "x-queue-type": "classic", "x-message-ttl": 30000,
+        "x-dead-letter-exchange": "email.dlx", "x-dead-letter-routing-key": "email" } },
+    { "name": "email.retry.3", "vhost": "/", "durable": true, "arguments": {
+        "x-queue-type": "classic", "x-message-ttl": 300000,
+        "x-dead-letter-exchange": "email.dlx", "x-dead-letter-routing-key": "email" } },
+    { "name": "email.dlq",   "vhost": "/", "durable": true, "arguments": { "x-queue-type": "classic" } },
+
+    { "name": "broadcast.a", "vhost": "/", "durable": true },
+    { "name": "broadcast.b", "vhost": "/", "durable": true },
+    { "name": "broadcast.c", "vhost": "/", "durable": true }
+  ],
+  "bindings": [
+    { "source": "orders.topic", "vhost": "/", "destination": "order.queue",     "destination_type": "queue", "routing_key": "order.created" },
+    { "source": "orders.topic", "vhost": "/", "destination": "email.queue",     "destination_type": "queue", "routing_key": "order.created" },
+    { "source": "orders.topic", "vhost": "/", "destination": "analytics.queue", "destination_type": "queue", "routing_key": "order.*" },
+
+    { "source": "email.retry", "vhost": "/", "destination": "email.retry.1", "destination_type": "queue", "routing_key": "retry.1" },
+    { "source": "email.retry", "vhost": "/", "destination": "email.retry.2", "destination_type": "queue", "routing_key": "retry.2" },
+    { "source": "email.retry", "vhost": "/", "destination": "email.retry.3", "destination_type": "queue", "routing_key": "retry.3" },
+    { "source": "email.dlx",   "vhost": "/", "destination": "email.queue",   "destination_type": "queue", "routing_key": "email" },
+    { "source": "email.dlx",   "vhost": "/", "destination": "email.dlq",     "destination_type": "queue", "routing_key": "dlq" },
+
+    { "source": "system.broadcast", "vhost": "/", "destination": "broadcast.a", "destination_type": "queue", "routing_key": "" },
+    { "source": "system.broadcast", "vhost": "/", "destination": "broadcast.b", "destination_type": "queue", "routing_key": "" },
+    { "source": "system.broadcast", "vhost": "/", "destination": "broadcast.c", "destination_type": "queue", "routing_key": "" }
+  ]
+}</code></pre>
+<div class="why"><b>Зачем:</b> вся топология описана декларативно и поднимается вместе с брокером. Воркеры ничего не declare'ят — только consume/publish. Пользователей здесь нет намеренно: их создаст env из docker-compose.</div>
+<details class="deep"><summary>🔬 Под капотом: аргументы очереди неизменяемы, classic vs quorum, кто «владеет» топологией</summary><div class="deep-body">
+<p><b>Аргументы нельзя поменять.</b> Если очередь <code>email.retry.1</code> уже существует с TTL 10000, а вы попробуете объявить её с TTL 5000 — получите <code>PRECONDITION_FAILED - inequivalent arg 'x-message-ttl'</code> и канал закроется. Единственный путь — удалить очередь и создать заново (<code>docker compose down -v</code> сносит и данные, и определения). В проде для гибкости используют <b>policies</b>: TTL/DLX задаются политикой по паттерну имени, а не аргументом очереди, и их можно менять на лету. Для лабы аргументы нагляднее.</p>
+<p><b>Classic vs quorum.</b> В RabbitMQ 4 по умолчанию рекомендуются quorum-очереди (реплицируемые через Raft, для кластера). Мы явно указываем <code>classic</code>, потому что: (а) один узел, репликация не нужна; (б) quorum-очереди поддерживают приоритеты ограниченно; (в) поведение TTL/DLX у classic проще для понимания. Разница — в разделе 13.</p>
+<p><b>Кто владеет топологией.</b> Три подхода: объявляет издатель (плохо — издатель не знает про consumer'ов), объявляет consumer (частая практика — «я знаю, что мне нужно»), или топология в конфиге/definitions/IaC (наш выбор — как в проде с Terraform). При импорте definitions уже существующие объекты с теми же параметрами пропускаются, с другими — ошибка.</p>
+<p><b>Пустой routing_key у fanout-биндингов</b> — не ошибка: fanout его игнорирует, но поле в JSON обязательно.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ <a href="#step-1-3">1.3</a>–1.4</span><ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/configure#config-file" target="_blank">Configuration → config file</a> — формат <code>rabbitmq.conf</code> (ключ = значение).</li>
+<li>📖 Почитать: <a href="https://hub.docker.com/_/rabbitmq" target="_blank">Образ rabbitmq на Docker Hub</a> — секции про management-тег и переменные <code>RABBITMQ_DEFAULT_USER</code>.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-1-3"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-3"></label><span class="num">Шаг 1.3</span><span class="file">rabbitmq/rabbitmq.conf<a class="anchor" href="#step-1-3">#</a></span></span><div class="step-body">
+<pre><code>load_definitions = /etc/rabbitmq/definitions.json</code></pre>
+<div class="why"><b>Зачем:</b> брокер при старте импортирует топологию из шага <a href="#step-1-2">1.2</a>. Раньше это делали через переменную <code>RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS</code> — забудьте, в 3.x/4.x достаточно строки в конфиге.</div>
+</div></div>
+
+<div class="step" id="step-1-4"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-4"></label><span class="num">Шаг 1.4</span><span class="file">docker-compose.yml<a class="anchor" href="#step-1-4">#</a></span></span><div class="step-body">
+<pre><code>x-app: &amp;app
+  build: ./laravel-app
+  volumes:
+    - ./laravel-app:/var/www
+  env_file: ./laravel-app/.env
+  depends_on:
+    postgres:  { condition: service_healthy }
+    rabbitmq:  { condition: service_healthy }
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:16
+    environment: { POSTGRES_DB: lab, POSTGRES_USER: lab, POSTGRES_PASSWORD: lab }
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U lab"], interval: 5s, retries: 10 }
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    environment: { RABBITMQ_DEFAULT_USER: lab, RABBITMQ_DEFAULT_PASS: lab }
+    ports: ["5672:5672", "15672:15672"]
+    volumes:
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck: { test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"], interval: 5s, retries: 20 }
+
+  mailpit:
+    image: axllent/mailpit
+    ports: ["8025:8025", "1025:1025"]
+
+  app:
+    &lt;&lt;: *app
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    ports: ["8000:8000"]
+    restart: "no"
+
+  outbox-relay:     { &lt;&lt;: *app, command: php artisan worker:outbox-relay }
+  order-worker:     { &lt;&lt;: *app, command: php artisan worker:order }
+  email-worker:     { &lt;&lt;: *app, command: php artisan worker:email }
+  analytics-worker: { &lt;&lt;: *app, command: php artisan worker:analytics }
+  failed-email-worker: { &lt;&lt;: *app, command: php artisan worker:failed-email }
+
+volumes:
+  pgdata:</code></pre>
+<div class="why"><b>Зачем:</b> один образ, много процессов. Каждый воркер — свой контейнер: <code>kill</code> для crash-теста, <code>--scale</code> для competing consumers, отдельные логи. Воркеры ещё не существуют — их контейнеры будут падать и рестартовать до шага 3.x; на первое время можно закомментировать.</div>
+<details class="deep"><summary>🔬 Под капотом: healthcheck, restart и «порядок старта — это не готовность»</summary><div class="deep-body">
+<p><code>depends_on</code> без <code>condition</code> лишь задаёт порядок <i>запуска</i> контейнеров, а не готовность сервисов: RabbitMQ поднимается 5–15 секунд, и воркер, стартовавший раньше, упадёт с <code>Connection refused</code>. <code>condition: service_healthy</code> + healthcheck решают это. <code>rabbitmq-diagnostics ping</code> отвечает, когда узел Erlang жив; в проде для строгой проверки используют <code>check_port_connectivity</code> или <code>check_running</code>.</p>
+<p><code>restart: unless-stopped</code> у воркеров — это и есть «супервизор» для лабы: после SIGKILL в crash-тесте контейнер поднимется сам. В проде это делает Kubernetes/systemd/supervisord. У <code>app</code> restart выключен намеренно — dev-сервер удобнее перезапускать руками.</p>
+<p><b>Для MacBook M2:</b> все образы (postgres, rabbitmq, mailpit, php) имеют arm64-варианты, ничего эмулировать не придётся.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ <a href="#step-1-5">1.5</a></span><ul>
+<li>📖 Почитать: <a href="https://hub.docker.com/_/php" target="_blank">Образ php на Docker Hub</a> — раздел «How to install more PHP extensions» (<code>docker-php-ext-install</code>).</li></ul></div>
+</div></div>
+
+<div class="step" id="step-1-5"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-5"></label><span class="num">Шаг 1.5</span>Создаём Laravel 13 и образ — <span class="file">laravel-app/Dockerfile<a class="anchor" href="#step-1-5">#</a></span></span><div class="step-body">
+<pre><code># на хосте (MacBook), из rabbitmq-lab/
+composer create-project laravel/laravel laravel-app
+cd laravel-app
+php artisan install:api          # появится routes/api.php
+composer require php-amqplib/php-amqplib
+composer require vladimir-yuldashev/laravel-queue-rabbitmq
+cd ..</code></pre>
+<pre><code># laravel-app/Dockerfile
+FROM php:8.4-cli
+RUN apt-get update &amp;&amp; apt-get install -y git unzip libpq-dev libzip-dev \
+ &amp;&amp; docker-php-ext-install pdo_pgsql pgsql sockets pcntl bcmath zip \
+ &amp;&amp; rm -rf /var/lib/apt/lists/*
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+WORKDIR /var/www</code></pre>
+<div class="why"><b>Зачем:</b> <code>sockets</code> нужен php-amqplib, <code>pcntl</code> — для перехвата SIGTERM (graceful shutdown<a class="fnref" href="#term-19" id="ref-19" title="к глоссарию">19</a>), <code>pdo_pgsql</code> — очевидно. Код монтируется volume'ом, образ пересобирать при правках не нужно.</div>
+<details class="deep"><summary>🔬 Под капотом: почему php-cli, а не php-fpm, и что делает install:api</summary><div class="deep-body">
+<p>Воркеры — долгоживущие CLI-процессы, им нужен именно <code>php-cli</code>: без ограничения <code>max_execution_time</code>, с доступом к <code>pcntl</code> (в fpm/apache он отключён по соображениям безопасности). Один и тот же образ для API (через <code>artisan serve</code>) и для воркеров — упрощение для лабы; в проде API живёт за nginx+php-fpm, а воркеры — в отдельном cli-образе.</p>
+<p><code>install:api</code> в Laravel 11+ создаёт <code>routes/api.php</code>, регистрирует его в <code>bootstrap/app.php</code> и ставит Sanctum. Sanctum нам не нужен, но не мешает.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ <a href="#step-1-6">1.6</a></span><ul>
+<li>📖 Почитать: <a href="https://laravel.com/docs/13.x/configuration#environment-configuration" target="_blank">Laravel 13: Environment Configuration</a> — почему <code>env()</code> только в config-файлах.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-1-6"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-6"></label><span class="num">Шаг 1.6</span><span class="file">laravel-app/.env<a class="anchor" href="#step-1-6">#</a></span> и конфиги</span><div class="step-body">
+<pre><code>APP_URL=http://localhost:8000
+
+DB_CONNECTION=pgsql
+DB_HOST=postgres
+DB_PORT=5432
+DB_DATABASE=lab
+DB_USERNAME=lab
+DB_PASSWORD=lab
+
+RABBITMQ_HOST=rabbitmq
+RABBITMQ_PORT=5672
+RABBITMQ_USER=lab
+RABBITMQ_PASSWORD=lab
+RABBITMQ_VHOST=/
+WORKER_PREFETCH=1
+
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+MAIL_FROM_ADDRESS=shop@lab.test
+MAIL_FROM_NAME="RabbitMQ Lab"
+
+# рычаги для "production hell"
+LAB_SIMULATE_SMTP_FAILURE=false
+LAB_CRASH_BEFORE_ACK=false
+LAB_SLOW_CONSUMER_MS=0</code></pre>
+<pre><code>// laravel-app/config/rabbitmq.php
+return [
+    'host'     =&gt; env('RABBITMQ_HOST', 'rabbitmq'),
+    'port'     =&gt; (int) env('RABBITMQ_PORT', 5672),
+    'user'     =&gt; env('RABBITMQ_USER', 'lab'),
+    'password' =&gt; env('RABBITMQ_PASSWORD', 'lab'),
+    'vhost'    =&gt; env('RABBITMQ_VHOST', '/'),
+    'prefetch' =&gt; (int) env('WORKER_PREFETCH', 1),
+];
+
+// laravel-app/config/lab.php
+return [
+    'simulate_smtp_failure' =&gt; (bool) env('LAB_SIMULATE_SMTP_FAILURE', false),
+    'crash_before_ack'      =&gt; (bool) env('LAB_CRASH_BEFORE_ACK', false),
+    'slow_consumer_ms'      =&gt; (int)  env('LAB_SLOW_CONSUMER_MS', 0),
+];</code></pre>
+<div class="why"><b>Зачем:</b> хосты — имена сервисов из docker-compose (внутри compose-сети они резолвятся по DNS). Все «поломки» сессии 3 включаются одной переменной окружения без правки кода.</div>
+<details class="deep"><summary>🔬 Под капотом: env, config:cache и переменные для одного контейнера</summary><div class="deep-body">
+<p><code>env()</code> читает переменные окружения процесса. После <code>php artisan config:cache</code> Laravel больше не читает <code>.env</code> — только закешированный массив конфига; <code>env()</code> вне config-файлов начнёт возвращать null. Поэтому доступ к переменным всегда через <code>config('lab.crash_before_ack')</code>.</p>
+<p>Чтобы дать одному воркеру другое значение (например, только email-worker с <code>LAB_SIMULATE_SMTP_FAILURE=true</code>), в compose у сервиса добавляют <code>environment:</code> — оно перекрывает <code>env_file</code>. Или на лету: <code>LAB_X=true docker compose up -d --force-recreate email-worker</code> с <code>environment: { LAB_X: ${LAB_X:-false} }</code> в сервисе.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ 1.7</span><ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/management" target="_blank">Management Plugin</a> — что показывают вкладки Overview / Connections / Channels / Exchanges / Queues.</li>
+<li>▶ Посмотреть: <a href="https://www.youtube.com/results?search_query=RabbitMQ+management+UI+tour+queues+exchanges+bindings" target="_blank">«RabbitMQ management UI tour»</a>.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-1-7"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-7"></label><span class="num">Шаг 1.7</span>Поднимаем инфраструктуру и маршрутизируем руками<a class="anchor" href="#step-1-7">#</a></span><div class="step-body">
+<pre><code>docker compose up -d postgres rabbitmq mailpit app
+docker compose exec app php artisan migrate     # пока — только стандартные таблицы Laravel
+open http://localhost:15672   # RabbitMQ UI, lab / lab
+open http://localhost:8025    # Mailpit</code></pre>
+<div class="why"><b>Зачем:</b> проверить импорт definitions: Exchanges — четыре наших; Queues — все 10 с аргументами (наведите на <code>email.retry.1</code>: увидите TTL и DLX). <b>Первое сообщение</b> — из UI: Exchanges → orders.topic → Publish message, routing key <code>order.created</code>, payload <code>{"test":1}</code>. Оно появится сразу в трёх очередях (Ready = 1). Смените ключ на <code>order.paid</code> — попадёт только в analytics.queue. Ключ <code>orders.created</code> (с опечаткой) — никуда: тихо исчезнет. Это Topic-маршрутизация руками, до единой строчки кода.</div>
+<details class="deep"><summary>🔬 Под капотом: что означают цифры в UI</summary><div class="deep-body">
+<table>
+<tr><th>Метрика</th><th>Что значит</th><th>Когда важно</th></tr>
+<tr><td><b>Ready</b></td><td>сообщений в очереди, готовых к выдаче</td><td>растёт — consumer'ы не успевают (backlog)</td></tr>
+<tr><td><b>Unacked</b></td><td>выдано consumer'ам, ещё не подтверждено</td><td>долго держится — воркер завис или prefetch слишком большой</td></tr>
+<tr><td><b>Total</b></td><td>Ready + Unacked</td><td></td></tr>
+<tr><td><b>Incoming / Deliver / Ack rate</b></td><td>сообщений в секунду</td><td>Deliver &gt; Ack — очередь отстаёт</td></tr>
+<tr><td><b>Redelivered</b> (в rate-графике)</td><td>сколько из доставленных — повторные</td><td>ненулевой стабильно — что-то регулярно падает до ack</td></tr>
+<tr><td><b>Consumer utilisation</b></td><td>доля времени, когда очередь могла отдавать сообщения</td><td>низко при Ready&gt;0 — consumer'ы упёрлись в prefetch</td></tr>
+</table>
+<p><b>Get messages</b> в UI — это <code>basic.get</code>, и у него есть режим: <i>Nack message requeue true</i> (посмотреть и вернуть — сообщение получит redelivered=true!) или <i>Ack message</i> (забрать навсегда). Не удивляйтесь, если после «просто посмотрели» воркер получит сообщение с флагом redelivered — это вы его «трогали».</p>
+<p><b>Connections/Channels</b> — здесь видно, кто подключён: каждый воркер должен иметь ровно одно соединение и один-два канала. Десятки каналов от одного процесса — признак утечки (открывают канал на каждое сообщение и не закрывают).</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ 1.8</span><ul>
+<li>📖 Почитать: <a href="https://www.postgresql.org/docs/16/datatype-json.html" target="_blank">PostgreSQL: JSON Types</a> — почему <code>jsonb</code>, а не <code>json</code>.</li>
+<li>📖 Почитать: <a href="https://laravel.com/docs/13.x/migrations#available-column-types" target="_blank">Laravel 13: Migrations → column types</a>.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-1-8"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-8"></label><span class="num">Шаг 1.8</span>Миграции<a class="anchor" href="#step-1-8">#</a></span><div class="step-body">
+<pre><code>php artisan make:migration create_lab_tables</code></pre>
+<pre><code>// database/migrations/xxxx_create_lab_tables.php  (метод up)
+Schema::create('products', function (Blueprint $t) {
+    $t-&gt;id(); $t-&gt;string('name'); $t-&gt;unsignedInteger('stock'); $t-&gt;timestamps();
+});
+Schema::create('orders', function (Blueprint $t) {
+    $t-&gt;id(); $t-&gt;unsignedBigInteger('user_id');
+    $t-&gt;string('status')-&gt;default('pending');      // pending|reserved|paid|cancelled|completed
+    $t-&gt;unsignedTinyInteger('priority')-&gt;default(0);
+    $t-&gt;timestamps();
+});
+Schema::create('order_items', function (Blueprint $t) {
+    $t-&gt;id();
+    $t-&gt;foreignId('order_id')-&gt;constrained()-&gt;cascadeOnDelete();
+    $t-&gt;foreignId('product_id')-&gt;constrained();
+    $t-&gt;unsignedInteger('quantity');
+});
+Schema::create('outbox_messages', function (Blueprint $t) {
+    $t-&gt;uuid('id')-&gt;primary();                     // = message_id в RabbitMQ
+    $t-&gt;string('routing_key');
+    $t-&gt;jsonb('payload');
+    $t-&gt;unsignedTinyInteger('priority')-&gt;default(0);
+    $t-&gt;string('status')-&gt;default('pending');      // pending|sent
+    $t-&gt;timestamp('published_at')-&gt;nullable();
+    $t-&gt;timestamps();
+    $t-&gt;index(['status', 'created_at']);
+});
+Schema::create('processed_messages', function (Blueprint $t) {
+    $t-&gt;id(); $t-&gt;uuid('message_id'); $t-&gt;string('consumer');
+    $t-&gt;timestamp('processed_at');
+    $t-&gt;unique(['message_id', 'consumer']);        // ключ идемпотентности
+});
+Schema::create('order_events', function (Blueprint $t) {
+    $t-&gt;id(); $t-&gt;unsignedBigInteger('order_id'); $t-&gt;string('event_type');
+    $t-&gt;jsonb('payload'); $t-&gt;timestamp('occurred_at');
+});</code></pre>
+<pre><code>php artisan migrate
+php artisan tinker --execute="App\Models\Product::insert([['name'=&gt;'Keyboard','stock'=&gt;100],['name'=&gt;'Mouse','stock'=&gt;100],['name'=&gt;'Monitor','stock'=&gt;5]]);"</code></pre>
+<div class="why"><b>Зачем:</b> <code>outbox_messages.id</code> — UUID, он же поедет в RabbitMQ как <code>message_id</code>: один идентификатор виден в БД, в UI брокера и в <code>processed_messages</code>. Уникальный индекс <code>(message_id, consumer)</code> — механизм идемпотентности. Monitor со stock=5 — чтобы позже словить «not enough stock».</div>
+<details class="deep"><summary>🔬 Под капотом: почему consumer — часть ключа, и что делает уникальный индекс под нагрузкой</summary><div class="deep-body">
+<p>Одно сообщение <code>order.created</code> обрабатывают три разных воркера — каждый должен обработать его по разу. Ключ только по <code>message_id</code> позволил бы первому успевшему «заблокировать» сообщение для остальных. Поэтому <code>(message_id, consumer)</code>.</p>
+<p>Уникальный индекс — это не «проверка», а <b>атомарная гарантия</b> на уровне БД. Сценарий: два order-worker'а одновременно получили один и тот же redelivered-дубль (возможно при обрыве соединения). Оба прошли проверку <code>exists()</code> (маркера ещё нет), оба открыли транзакцию, оба списали stock. Первый коммитит. Второй на INSERT в <code>processed_messages</code> получает <code>unique_violation</code> → исключение → вся его транзакция откатывается, включая списание. Без индекса «проверка перед обработкой» была бы гонкой.</p>
+<p>Индекс <code>(status, created_at)</code> на outbox — чтобы <code>WHERE status='pending' ORDER BY created_at</code> не сканировал таблицу, когда в ней миллион <code>sent</code>-строк.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ 1.9</span><ul>
+<li>📖 Почитать: <a href="https://laravel.com/docs/13.x/eloquent#uuid-and-ulid-keys" target="_blank">Laravel 13: Eloquent → UUID keys</a> — трейт <code>HasUuids</code>.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-1-9"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-9"></label><span class="num">Шаг 1.9</span>Модели<a class="anchor" href="#step-1-9">#</a></span><div class="step-body">
+<pre><code>php artisan make:model Product &amp;&amp; php artisan make:model Order &amp;&amp; php artisan make:model OrderItem
+php artisan make:model OutboxMessage &amp;&amp; php artisan make:model ProcessedMessage &amp;&amp; php artisan make:model OrderEvent</code></pre>
+<pre><code>// app/Models/Order.php
+class Order extends Model {
+    protected $fillable = ['user_id', 'status', 'priority'];
+    public function items() { return $this-&gt;hasMany(OrderItem::class); }
+}
+// app/Models/OrderItem.php
+class OrderItem extends Model {
+    public $timestamps = false;
+    protected $fillable = ['order_id', 'product_id', 'quantity'];
+}
+// app/Models/OutboxMessage.php
+class OutboxMessage extends Model {
+    use HasUuids;
+    protected $fillable = ['routing_key', 'payload', 'priority', 'status', 'published_at'];
+    protected function casts(): array { return ['payload' =&gt; 'array', 'published_at' =&gt; 'datetime']; }
+}
+// app/Models/ProcessedMessage.php
+class ProcessedMessage extends Model {
+    public $timestamps = false;
+    protected $fillable = ['message_id', 'consumer', 'processed_at'];
+}
+// app/Models/OrderEvent.php
+class OrderEvent extends Model {
+    public $timestamps = false;
+    protected $fillable = ['order_id', 'event_type', 'payload', 'occurred_at'];
+    protected function casts(): array { return ['payload' =&gt; 'array']; }
+}
+// Product: $fillable = ['name', 'stock']</code></pre>
+<div class="why"><b>Зачем:</b> <code>HasUuids</code> генерирует UUID при create(). Модели здесь — просто доступ к таблицам, никакой логики.</div>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ 2.1</span><ul>
+<li>📖 Перечитать: раздел 5 (Outbox) — теперь он превращается в код.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-2-1"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-2-1"></label><span class="num">Шаг 2.1</span>OutboxWriter — <span class="file">app/Services/OutboxWriter.php<a class="anchor" href="#step-2-1">#</a></span></span><div class="step-body">
+<pre><code>&lt;?php
+namespace App\Services;
+
+use App\Models\OutboxMessage;
+
+final class OutboxWriter
+{
+    /** Вызывать ТОЛЬКО внутри DB::transaction() вместе с основной бизнес-записью. */
+    public function write(string $routingKey, array $payload, int $priority = 0): OutboxMessage
+    {
+        return OutboxMessage::create([
+            'routing_key' =&gt; $routingKey,
+            'payload'     =&gt; $payload + ['event' =&gt; $routingKey, 'occurred_at' =&gt; now()-&gt;toIso8601String()],
+            'priority'    =&gt; $priority,
+            'status'      =&gt; 'pending',
+        ]);
+    }
+}</code></pre>
+<div class="why"><b>Зачем:</b> единственная точка, через которую события уходят «наружу». Ни контроллер, ни воркеры не знают о RabbitMQ — только про outbox.</div>
+<details class="deep"><summary>🔬 Под капотом: контракт события</summary><div class="deep-body">
+<p>В payload всегда добавляются <code>event</code> и <code>occurred_at</code> — это минимальный «конверт» события. В зрелых системах конверт больше: <code>event_id</code> (у нас — message_id), <code>version</code> (схема payload может меняться), <code>producer</code>, <code>trace_id</code> (для распределённой трассировки). Consumer'ы должны быть терпимы к новым полям (tolerant reader) и никогда не ломаться на неизвестном ключе.</p>
+<p>Почему payload содержит <code>items</code>, а не только <code>order_id</code>? Это «fat event»: consumer'у не нужно ходить в БД за деталями. «Thin event» (только id) меньше, но создаёт связность через БД и гонку: consumer может прочитать заказ раньше, чем API его обновил. Для событий создания fat-подход обычно лучше.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ <a href="#step-2-2">2.2</a></span><ul>
+<li>📖 Почитать: <a href="https://laravel.com/docs/13.x/validation#quick-writing-the-validation-logic" target="_blank">Laravel 13: Validation</a> — правила <code>items.*.product_id</code> для вложенных массивов.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-2-2"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-2-2"></label><span class="num">Шаг 2.2</span>API — <span class="file">app/Http/Controllers/OrderController.php<a class="anchor" href="#step-2-2">#</a></span> и <span class="file">routes/api.php</span></span><div class="step-body">
+<pre><code>&lt;?php
+namespace App\Http\Controllers;
+
+use App\Models\Order;
+use App\Services\OutboxWriter;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class OrderController extends Controller
+{
+    public function store(Request $request, OutboxWriter $outbox)
+    {
+        $data = $request-&gt;validate([
+            'user_id'            =&gt; 'required|integer',
+            'priority'           =&gt; 'sometimes|integer|min:0|max:10',
+            'items'              =&gt; 'required|array|min:1',
+            'items.*.product_id' =&gt; 'required|integer|exists:products,id',
+            'items.*.quantity'   =&gt; 'required|integer|min:1',
+        ]);
+
+        $order = DB::transaction(function () use ($data, $outbox) {
+            $order = Order::create([
+                'user_id'  =&gt; $data['user_id'],
+                'priority' =&gt; $data['priority'] ?? 0,
+            ]);
+            $order-&gt;items()-&gt;createMany($data['items']);
+
+            $outbox-&gt;write('order.created', [
+                'order_id' =&gt; $order-&gt;id,
+                'user_id'  =&gt; $order-&gt;user_id,
+                'items'    =&gt; $data['items'],
+            ], $order-&gt;priority);
+
+            return $order;
+        });
+
+        return response()-&gt;json($order-&gt;load('items'), 201);
+    }
+}</code></pre>
+<pre><code>// routes/api.php
+use App\Http\Controllers\OrderController;
+Route::post('/orders', [OrderController::class, 'store']);</code></pre>
+<pre><code>curl -s -X POST http://localhost:8000/api/orders -H 'Content-Type: application/json' \
+  -d '{"user_id":15,"items":[{"product_id":1,"quantity":2},{"product_id":2,"quantity":1}]}' | jq</code></pre>
+<div class="why"><b>Зачем:</b> заказ и outbox-запись — одна транзакция. После curl загляните в <code>outbox_messages</code>: строка <code>pending</code>. В RabbitMQ пусто — релея ещё нет. API вообще не трогает брокер.</div>
+<details class="deep"><summary>🔬 Под капотом: что делает DB::transaction при исключении и почему валидация — до транзакции</summary><div class="deep-body">
+<p><code>DB::transaction(fn)</code> — это <code>BEGIN</code>, вызов замыкания, <code>COMMIT</code>; любое исключение внутри → <code>ROLLBACK</code> и проброс наружу. Если <code>OutboxMessage::create</code> упадёт (например, из-за JSON с невалидным UTF-8) — заказ тоже откатится. Это и есть атомарность, ради которой всё затевалось.</p>
+<p>Валидация — до транзакции: не нужно держать соединение и блокировки, пока проверяем вход. <code>exists:products,id</code> — отдельный SELECT; при большом потоке это дополнительная нагрузка, но для лабы приемлемо. Проверка наличия stock здесь <b>намеренно не делается</b>: её сделает order-worker под блокировкой, иначе будет TOCTOU-гонка (проверили — а между проверкой и резервом кто-то купил).</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ <a href="#step-3-1">3.1</a></span><ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/heartbeats" target="_blank">Heartbeats</a> — короткий документ, объясняющий параметр из следующего шага.</li>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/connections" target="_blank">Connections</a> и <a href="https://www.rabbitmq.com/docs/channels" target="_blank">Channels</a> — жизненный цикл и почему «одно соединение на процесс».</li></ul></div>
+</div></div>
+
+<div class="step" id="step-3-1"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-3-1"></label><span class="num">Шаг 3.1</span>Фабрика соединения — <span class="file">app/Services/Amqp/AmqpConnectionFactory.php<a class="anchor" href="#step-3-1">#</a></span></span><div class="step-body">
+<pre><code>&lt;?php
+namespace App\Services\Amqp;
+
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+
+final class AmqpConnectionFactory
+{
+    public function connect(): AMQPStreamConnection
+    {
+        $c = config('rabbitmq');
+        return new AMQPStreamConnection(
+            $c['host'], $c['port'], $c['user'], $c['password'], $c['vhost'],
+            heartbeat: 30,          // брокер поймёт, что воркер умер, за ~60 сек
+            keepalive: true,
+        );
+    }
+}</code></pre>
+<div class="why"><b>Зачем:</b> одно место для параметров. Heartbeat важен для crash-теста: без него брокер может долго «не замечать» мёртвого consumer'а и держать его unacked-сообщения.</div>
+<details class="deep"><summary>🔬 Под капотом: heartbeat, кто его шлёт и почему ваш код должен «дышать»</summary><div class="deep-body">
+<p>Heartbeat согласовывается при подключении: клиент предлагает 30 с, брокер (по умолчанию 60) — берётся минимум. Дальше <b>обе</b> стороны обязаны слать heartbeat-фрейм каждые 30 с, если нет другого трафика; сторона, не получившая ничего за два интервала (60 с), рвёт соединение. Отсюда «~60 сек».</p>
+<p>Подвох php-amqplib: heartbeat-фреймы отправляет <b>ваш</b> процесс, и только когда он находится внутри библиотечных вызовов (<code>wait()</code>, publish). Если <code>process()</code> обрабатывает сообщение 90 секунд, не касаясь канала, брокер решит, что вы умерли, закроет соединение и передоставит сообщение другому воркеру — а вы потом получите исключение на <code>ack()</code>. Для долгих задач это классическая ловушка. Решения: <code>PCNTLHeartbeatSender</code> из php-amqplib (шлёт heartbeat по сигналу таймера), либо большой heartbeat, либо не делать долгую работу в consumer'е (разбивать). В лабе задачи короткие, но <code>LAB_SLOW_CONSUMER_MS=90000</code> покажет эффект наглядно.</p>
+<p><b>Одно соединение на процесс, каналы — на роль.</b> Соединение — дорогой ресурс и у клиента, и у брокера (Erlang-процессы, буферы). Открывать соединение на каждое сообщение (частая ошибка в PHP-мире с request-per-process мышлением) — путь к «too many connections». Внутри API, где нет долгоживущего процесса, как раз и спасает outbox: API не подключается к брокеру вообще.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ <a href="#step-3-2">3.2</a> (самый важный шаг)</span><ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/confirms#consumer-acknowledgements" target="_blank">Consumer Acknowledgements</a> — до подраздела про publisher confirms. Обратите внимание на delivery tag, multiple, и что происходит с unacked при закрытии канала.</li>
+<li>📖 Почитать: <a href="https://www.php.net/manual/en/function.pcntl-async-signals.php" target="_blank">PHP: pcntl_async_signals</a>.</li>
+<li>▶ Посмотреть: <a href="https://www.youtube.com/results?search_query=RabbitMQ+manual+ack+nack+reject+requeue+explained" target="_blank">«RabbitMQ manual ack nack reject requeue»</a>.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-3-2"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-3-2"></label><span class="num">Шаг 3.2</span>Базовый consumer — <span class="file">app/Console/Commands/Workers/AbstractAmqpWorker.php<a class="anchor" href="#step-3-2">#</a></span></span><div class="step-body">
+<pre><code>&lt;?php
+namespace App\Console\Commands\Workers;
+
+use App\Models\ProcessedMessage;
+use App\Services\Amqp\AmqpConnectionFactory;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use PhpAmqpLib\Channel\AMQPChannel;
+use PhpAmqpLib\Exception\AMQPTimeoutException;
+use PhpAmqpLib\Message\AMQPMessage;
+
+abstract class AbstractAmqpWorker extends Command
+{
+    private bool $stopping = false;
+    protected AMQPChannel $channel;
+
+    abstract protected function queue(): string;
+    abstract protected function consumerName(): string;
+    /** Бизнес-логика. Бросай исключение — попадёшь в onFailure(). */
+    abstract protected function process(array $payload, AMQPMessage $msg): void;
+
+    public function handle(AmqpConnectionFactory $factory): int
+    {
+        pcntl_async_signals(true);
+        pcntl_signal(SIGTERM, fn () =&gt; $this-&gt;stopping = true);   // docker stop
+        pcntl_signal(SIGINT,  fn () =&gt; $this-&gt;stopping = true);   // Ctrl+C
+
+        $conn = $factory-&gt;connect();
+        $this-&gt;channel = $conn-&gt;channel();
+        $this-&gt;channel-&gt;basic_qos(0, config('rabbitmq.prefetch'), false);      // prefetch
+        $this-&gt;channel-&gt;basic_consume(
+            queue: $this-&gt;queue(), consumer_tag: $this-&gt;consumerName() . '-' . getmypid(),
+            no_ack: false,                                                    // ручной ack
+            callback: fn (AMQPMessage $m) =&gt; $this-&gt;handleMessage($m),
+        );
+        $this-&gt;info("[{$this-&gt;consumerName()}] listening {$this-&gt;queue()} prefetch=" . config('rabbitmq.prefetch'));
+
+        while ($this-&gt;channel-&gt;is_consuming() &amp;&amp; !$this-&gt;stopping) {
+            try { $this-&gt;channel-&gt;wait(timeout: 1); }                        // раз в секунду проверяем флаг
+            catch (AMQPTimeoutException) { /* тишина — это нормально */ }
+        }
+
+        $this-&gt;info('graceful shutdown: закрываем канал');
+        $this-&gt;channel-&gt;close(); $conn-&gt;close();
+        return self::SUCCESS;
+    }
+
+    protected function handleMessage(AMQPMessage $msg): void
+    {
+        $id      = $msg-&gt;get('message_id');
+        $payload = json_decode($msg-&gt;getBody(), true);
+        $redeliv = $msg-&gt;get('redelivered') ? ' (REDELIVERED)' : '';
+        $this-&gt;line("← {$id}{$redeliv}");
+
+        if (ProcessedMessage::where('message_id', $id)-&gt;where('consumer', $this-&gt;consumerName())-&gt;exists()) {
+            $this-&gt;warn("   duplicate → ack без обработки");
+            $msg-&gt;ack();
+            return;
+        }
+
+        if ($ms = config('lab.slow_consumer_ms')) { usleep($ms * 1000); }     // "медленный consumer"
+
+        try {
+            DB::transaction(function () use ($payload, $msg, $id) {
+                $this-&gt;process($payload, $msg);
+                ProcessedMessage::create([
+                    'message_id' =&gt; $id, 'consumer' =&gt; $this-&gt;consumerName(), 'processed_at' =&gt; now(),
+                ]);
+            });
+        } catch (\Throwable $e) {
+            $this-&gt;onFailure($msg, $e);
+            return;
+        }
+
+        if (config('lab.crash_before_ack')) {                                  // "💥 упали до ACK"
+            $this-&gt;error('CRASH before ack'); posix_kill(getmypid(), SIGKILL);
+        }
+        $msg-&gt;ack();
+        $this-&gt;info("   ✔ ack");
+    }
+
+    /** По умолчанию: отклонить без requeue (уйдёт в DLX очереди, если он настроен, иначе — исчезнет). */
+    protected function onFailure(AMQPMessage $msg, \Throwable $e): void
+    {
+        $this-&gt;error("   ✖ {$e-&gt;getMessage()} → nack(requeue=false)");
+        $msg-&gt;nack(requeue: false);
+    }
+}</code></pre>
+<div class="why"><b>Зачем:</b> сердце лабы. Здесь видны все концепции сразу: <code>basic_qos</code> — prefetch; <code>no_ack=false</code> — ручное подтверждение; цикл с таймаутом + сигналы — graceful shutdown; проверка маркера <i>до</i> обработки и запись маркера <i>внутри той же транзакции</i>, что и бизнес-эффект — идемпотентность; <code>redelivered</code> — флаг брокера при повторной доставке.</div>
+<details class="deep"><summary>🔬 Под капотом: построчный разбор — что летит по сети и что делает брокер</summary><div class="deep-body">
+<p><b><code>basic_qos(0, N, false)</code></b> — фрейм <code>basic.qos</code>: prefetch_size=0 (без ограничения по байтам), prefetch_count=N, global=false (на consumer, не на канал). Брокер отвечает <code>basic.qos-ok</code>. С этого момента у канала есть «кредит» в N сообщений.</p>
+<p><b><code>basic_consume(...)</code></b> — фрейм <code>basic.consume</code> с consumer_tag и <code>no_ack=false</code>. Брокер регистрирует consumer на очереди, отвечает <code>basic.consume-ok</code> — и <b>сразу</b> начинает толкать сообщения в пределах prefetch, ещё до того, как вы вошли в цикл <code>wait()</code>. Они буферизуются в сокете/библиотеке. Тег вида <code>order-worker-1234</code> помогает в UI понять, какой процесс что держит.</p>
+<p><b><code>wait(timeout: 1)</code></b> — прочитать фреймы из сокета; на <code>basic.deliver</code> библиотека собирает method+header+body в <code>AMQPMessage</code> и вызывает callback. Если за секунду ничего не пришло — <code>AMQPTimeoutException</code>, мы её глотаем и проверяем <code>$stopping</code>. Без таймаута <code>wait()</code> блокировался бы бесконечно и сигнал обработался бы только при следующем сообщении.</p>
+<p><b>Сигналы.</b> <code>pcntl_async_signals(true)</code> позволяет обработчику сработать «между инструкциями» PHP, а не только при явном <code>pcntl_signal_dispatch()</code>. <code>docker stop</code> шлёт SIGTERM и ждёт 10 секунд (grace period), потом SIGKILL. Наш цикл выйдет максимум через ~1 с + время обработки текущего сообщения. Если обработка дольше 10 с — увеличьте <code>stop_grace_period</code> в compose.</p>
+<p><b>Почему <code>channel->close()</code> важен.</b> Корректное закрытие шлёт <code>channel.close</code>/<code>connection.close</code>; брокер сразу возвращает unacked (у нас их нет — мы вышли из цикла после ack) и снимает consumer. При SIGKILL этого не происходит: брокер узнает о смерти только по TCP RST или heartbeat-таймауту.</p>
+<p><b><code>$msg->get('redelivered')</code></b> — флаг из <code>basic.deliver</code>. Он означает «это сообщение уже кому-то отдавалось», не более: брокер не знает, обработали вы его или нет. Именно поэтому нужен наш маркер в БД.</p>
+<p><b>Порядок в handleMessage.</b> Сначала дешёвая проверка маркера (SELECT), потом транзакция с эффектом и INSERT маркера, потом ack. Три возможных точки падения: до транзакции (ничего не произошло, redelivery обработает заново — правильно), внутри транзакции (ROLLBACK, redelivery — правильно), после COMMIT до ack (эффект есть, маркер есть, redelivery увидит маркер — правильно). Нет ни одной точки, где эффект произошёл бы дважды или не произошёл вовсе. Это и называется «идемпотентный consumer при at-least-once доставке».</p>
+<p><b>Одна оговорка про <code>exists()</code> до транзакции.</b> Она — оптимизация, не гарантия (гарантия — уникальный индекс). Между <code>exists()</code> и INSERT другой процесс может успеть вставить маркер, и тогда INSERT упадёт → onFailure → nack. Для «дубль после падения» это редчайший случай, но знать о нём надо: если хотите, оберните INSERT в проверку <code>unique_violation</code> и делайте ack вместо nack.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ <a href="#step-3-3">3.3</a></span><ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/confirms#publisher-confirms" target="_blank">Publisher Confirms</a> — подраздел про sequence numbers и multiple.</li>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/tutorials/tutorial-seven-php" target="_blank">Tutorial 7 (PHP): Publisher Confirms</a> — три стратегии: по одному, батчами, асинхронно.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-3-3"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-3-3"></label><span class="num">Шаг 3.3</span>Outbox relay с publisher confirms — <span class="file">app/Console/Commands/Workers/OutboxRelayCommand.php<a class="anchor" href="#step-3-3">#</a></span></span><div class="step-body">
+<pre><code>&lt;?php
+namespace App\Console\Commands\Workers;
+
+use App\Models\OutboxMessage;
+use App\Services\Amqp\AmqpConnectionFactory;
+use Illuminate\Console\Command;
+use PhpAmqpLib\Message\AMQPMessage;
+use PhpAmqpLib\Wire\AMQPTable;
+
+class OutboxRelayCommand extends Command
+{
+    protected $signature   = 'worker:outbox-relay {--sleep=1}';
+    protected $description = 'Читает outbox_messages и публикует в orders.topic с publisher confirms';
+
+    public function handle(AmqpConnectionFactory $factory): int
+    {
+        $conn = $factory-&gt;connect();
+        $ch   = $conn-&gt;channel();
+        $ch-&gt;confirm_select();                                    // включаем publisher confirms
+        $ch-&gt;set_nack_handler(fn (AMQPMessage $m) =&gt; $this-&gt;error("broker NACKed " . $m-&gt;get('message_id')));
+
+        while (true) {
+            $batch = OutboxMessage::where('status', 'pending')-&gt;orderBy('created_at')-&gt;limit(50)-&gt;get();
+
+            foreach ($batch as $row) {
+                $msg = new AMQPMessage(json_encode($row-&gt;payload), [
+                    'content_type'        =&gt; 'application/json',
+                    'delivery_mode'       =&gt; AMQPMessage::DELIVERY_MODE_PERSISTENT,   // persistent
+                    'message_id'          =&gt; $row-&gt;id,
+                    'priority'            =&gt; $row-&gt;priority,
+                    'timestamp'           =&gt; time(),
+                    'application_headers' =&gt; new AMQPTable(['x-retry-count' =&gt; 0]),
+                ]);
+                $ch-&gt;basic_publish($msg, 'orders.topic', $row-&gt;routing_key);
+                $ch-&gt;wait_for_pending_acks(timeout: 5);           // блокируемся до confirm от брокера
+                $row-&gt;update(['status' =&gt; 'sent', 'published_at' =&gt; now()]);
+                $this-&gt;info("→ {$row-&gt;routing_key} {$row-&gt;id}");
+            }
+
+            if ($batch-&gt;isEmpty()) { sleep((int) $this-&gt;option('sleep')); }
+        }
+    }
+}</code></pre>
+<pre><code>docker compose up -d outbox-relay &amp;&amp; docker compose logs -f outbox-relay</code></pre>
+<div class="why"><b>Зачем:</b> <code>confirm_select</code> + <code>wait_for_pending_acks</code> — брокер подтвердил приём (для persistent в durable-очередь — после записи на диск). Только после этого строка помечается <code>sent</code>. Упал между publish и update — при перезапуске опубликует ещё раз с тем же message_id; дубль погасит consumer.</div>
+<details class="deep"><summary>🔬 Под капотом: sequence numbers, nack от брокера, mandatory и производительность</summary><div class="deep-body">
+<p><b>Как работают confirms.</b> После <code>confirm.select</code> канал переходит в confirm-режим; каждый <code>basic.publish</code> получает порядковый номер (1, 2, 3…) на стороне клиента. Брокер отвечает <code>basic.ack(delivery_tag=N, multiple=true/false)</code> — «всё до N принято». Для транзиентных сообщений ack приходит сразу после маршрутизации, для persistent — после fsync (поэтому может «пачкой» через 100–300 мс). <code>wait_for_pending_acks</code> читает фреймы, пока список неподтверждённых не опустеет.</p>
+<p><b>Что значит confirm.</b> «Брокер взял ответственность»: сообщение положено во все подходящие очереди (или ни в одну — <b>confirm приходит и для сообщения, которое никуда не отроутилось</b>!). Чтобы поймать «никуда не попало», нужен флаг <code>mandatory=true</code> в publish и обработчик <code>basic.return</code> (<code>set_return_listener</code>). Домашнее задание: добавить его и опубликовать с опечаткой в routing key.</p>
+<p><b>basic.nack от брокера</b> — редкость: означает внутреннюю ошибку (например, очередь недоступна на другой ноде кластера). Мы логируем и оставляем строку pending — релей повторит.</p>
+<p><b>Производительность.</b> Confirm на каждое сообщение = один round-trip ≈ 1–2 мс = максимум ~500–1000 сообщений/с. Батч (publish 50, потом один <code>wait_for_pending_acks</code>, потом один UPDATE ... WHERE id IN (...)) даёт десятки тысяч/с. Асинхронный режим (<code>set_ack_handler</code> + продолжать публиковать) — ещё быстрее, но сложнее в учёте. Для лабы — по одному: так каждое подтверждение видно.</p>
+<p><b>Почему <code>while (true)</code> без graceful shutdown</b> — намеренное упрощение; при SIGTERM релей умрёт посреди батча, но это безопасно: незакоммиченные UPDATE откатятся, строки останутся pending, повтор — идемпотентен. Хорошее упражнение: перенести сюда обработку сигналов из шага <a href="#step-3-2">3.2</a>.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ <a href="#step-3-4">3.4</a></span><ul>
+<li>📖 Почитать: <a href="https://www.postgresql.org/docs/16/explicit-locking.html#LOCKING-ROWS" target="_blank">PostgreSQL: Row-Level Locks</a> — <code>FOR UPDATE</code> и что он блокирует.</li>
+<li>📖 Почитать: <a href="https://laravel.com/docs/13.x/mail#sending-mail" target="_blank">Laravel 13: Mail → Sending</a> — <code>Mail::raw</code>.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-3-4"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-3-4"></label><span class="num">Шаг 3.4</span>Три воркера happy path<a class="anchor" href="#step-3-4">#</a></span><div class="step-body">
+<pre><code>&lt;?php // app/Console/Commands/Workers/OrderWorkerCommand.php
+namespace App\Console\Commands\Workers;
+
+use App\Models\{Order, Product};
+use App\Services\OutboxWriter;
+use PhpAmqpLib\Message\AMQPMessage;
+
+class OrderWorkerCommand extends AbstractAmqpWorker
+{
+    protected $signature = 'worker:order';
+    protected function queue(): string        { return 'order.queue'; }
+    protected function consumerName(): string { return 'order-worker'; }
+
+    protected function process(array $p, AMQPMessage $msg): void
+    {
+        $items = collect($p['items'])-&gt;sortBy('product_id');       // одинаковый порядок блокировок → нет deadlock
+        foreach ($items as $item) {
+            $product = Product::lockForUpdate()-&gt;findOrFail($item['product_id']);
+            if ($product-&gt;stock &lt; $item['quantity']) {
+                throw new \DomainException("not enough stock for product {$product-&gt;id}");
+            }
+            $product-&gt;decrement('stock', $item['quantity']);
+        }
+        Order::whereKey($p['order_id'])-&gt;update(['status' =&gt; 'reserved']);
+        app(OutboxWriter::class)-&gt;write('order.reserved', ['order_id' =&gt; $p['order_id']]);  // та же транзакция
+    }
+}</code></pre>
+<pre><code>&lt;?php // app/Console/Commands/Workers/EmailWorkerCommand.php  (happy path; retry добавим в шаге 5.2)
+namespace App\Console\Commands\Workers;
+
+use Illuminate\Support\Facades\Mail;
+use PhpAmqpLib\Message\AMQPMessage;
+
+class EmailWorkerCommand extends AbstractAmqpWorker
+{
+    protected $signature = 'worker:email';
+    protected function queue(): string        { return 'email.queue'; }
+    protected function consumerName(): string { return 'email-worker'; }
+
+    protected function process(array $p, AMQPMessage $msg): void
+    {
+        if (config('lab.simulate_smtp_failure')) {
+            throw new \RuntimeException('SMTP server unavailable');
+        }
+        Mail::raw("Ваш заказ №{$p['order_id']} создан", fn ($m) =&gt;
+            $m-&gt;to("user{$p['user_id']}@lab.test")-&gt;subject("Заказ №{$p['order_id']}"));
+    }
+}</code></pre>
+<pre><code>&lt;?php // app/Console/Commands/Workers/AnalyticsWorkerCommand.php
+namespace App\Console\Commands\Workers;
+
+use App\Models\OrderEvent;
+use PhpAmqpLib\Message\AMQPMessage;
+
+class AnalyticsWorkerCommand extends AbstractAmqpWorker
+{
+    protected $signature = 'worker:analytics';
+    protected function queue(): string        { return 'analytics.queue'; }
+    protected function consumerName(): string { return 'analytics-worker'; }
+
+    protected function process(array $p, AMQPMessage $msg): void
+    {
+        OrderEvent::create([
+            'order_id' =&gt; $p['order_id'], 'event_type' =&gt; $p['event'],
+            'payload'  =&gt; $p,            'occurred_at' =&gt; $p['occurred_at'],
+        ]);
+    }
+}</code></pre>
+<pre><code>docker compose up -d order-worker email-worker analytics-worker
+docker compose logs -f order-worker email-worker analytics-worker
+# в другом терминале — ещё один заказ через curl из шага 2.2</code></pre>
+<div class="why"><b>Зачем:</b> вся инфраструктура consumer'а — в базовом классе; каждый воркер — только <code>process()</code>. После curl: в логах три воркера, в Mailpit письмо, в <code>order_events</code> две строки (<code>order.created</code> и <code>order.reserved</code> — второе пришло через outbox из OrderWorker тем же путём). Сессия 1 закончена: happy path работает целиком.</div>
+<details class="deep"><summary>🔬 Под капотом: FOR UPDATE, deadlock, outbox из воркера и «email в транзакции»</summary><div class="deep-body">
+<p><b><code>lockForUpdate()</code></b> = <code>SELECT ... FOR UPDATE</code>: строка блокируется до конца транзакции; второй воркер, дошедший до того же товара, <b>ждёт</b>, а не читает устаревший stock. Это пессимистическая блокировка. Альтернатива — оптимистическая: <code>UPDATE products SET stock = stock - 2 WHERE id = 1 AND stock >= 2</code> и проверка, что затронута 1 строка. Она быстрее под нагрузкой; хорошее упражнение — переписать на неё.</p>
+<p><b>Deadlock.</b> Воркер A блокирует товар 1, потом хочет 2; воркер B — наоборот. PostgreSQL обнаружит deadlock и убьёт одну транзакцию (исключение → nack). Сортировка items по <code>product_id</code> гарантирует одинаковый порядок захвата — классический приём.</p>
+<p><b>Outbox из воркера.</b> <code>order.reserved</code> пишется в той же транзакции, что и списание: если транзакция откатится, события не будет. Релей подхватит его так же, как события из API. Так любой процесс в системе публикует события одинаково и безопасно.</p>
+<p><b>Email внутри DB::transaction — это спорно.</b> Отправка SMTP — внешний вызов внутри транзакции: держит соединение с БД, а при откате письмо уже ушло. Для лабы допустимо (эффект — только письмо, маркер — в БД), но в проде правильнее: маркер в транзакции, отправка — после коммита, с пониманием, что «письмо ушло, а маркер не записался» = возможный дубль письма (обычно приемлемо). Это ещё одна иллюстрация, что exactly-once с внешним миром недостижимо.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД СЕССИЕЙ 2</span><ul>
+<li>📖 Перечитать: раздел 2.6–2.7 (delivery tag, prefetch) — теперь с пониманием кода.</li>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/reliability" target="_blank">Reliability Guide</a> — обзор всех механизмов надёжности в одном месте; сессия 2 — это он по пунктам.</li>
+<li>▶ Посмотреть: <a href="https://www.youtube.com/results?search_query=RabbitMQ+at+least+once+delivery+idempotent+consumer" target="_blank">«at-least-once delivery idempotent consumer»</a>.</li></ul></div>
+</div></div>
+
+<div class="session-banner" id="session-2">СЕССИЯ 2 — Надёжность: ack/nack, prefetch, retry, идемпотентность <span>~3.5 часа</span></div>
+
+<div class="step" id="step-4-1"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-4-1"></label><span class="num">Шаг 4.1</span>Генератор нагрузки — <span class="file">app/Console/Commands/Lab/PublishOrdersCommand.php<a class="anchor" href="#step-4-1">#</a></span></span><div class="step-body">
+<pre><code>&lt;?php
+namespace App\Console\Commands\Lab;
+
+use App\Models\Order;
+use App\Services\OutboxWriter;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+
+class PublishOrdersCommand extends Command
+{
+    protected $signature = 'lab:orders {count=100} {--priority=0}';
+
+    public function handle(OutboxWriter $outbox): int
+    {
+        for ($i = 0; $i &lt; (int) $this-&gt;argument('count'); $i++) {
+            DB::transaction(function () use ($outbox) {
+                $order = Order::create(['user_id' =&gt; rand(1, 50), 'priority' =&gt; (int) $this-&gt;option('priority')]);
+                $items = [['product_id' =&gt; rand(1, 2), 'quantity' =&gt; 1]];   // Monitor не трогаем
+                $order-&gt;items()-&gt;createMany($items);
+                $outbox-&gt;write('order.created', ['order_id' =&gt; $order-&gt;id, 'user_id' =&gt; $order-&gt;user_id, 'items' =&gt; $items], $order-&gt;priority);
+            });
+        }
+        $this-&gt;info("queued {$this-&gt;argument('count')} orders");
+        return self::SUCCESS;
+    }
+}</code></pre>
+<div class="why"><b>Зачем:</b> через тот же OutboxWriter — никаких обходных путей в брокер. 1000 заказов появятся в outbox мгновенно, релей будет их выливать — увидите живой рост Ready в UI. Stock у Keyboard/Mouse (по 100) закончится после ~200 заказов — дальше order-worker начнёт бросать DomainException; поднимите stock через tinker или считайте это частью production hell.</div>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ <a href="#step-4-2">4.2</a></span><ul>
+<li>📖 Почитать: <a href="https://docs.docker.com/reference/cli/docker/compose/up/" target="_blank">docker compose up</a> — флаги <code>--scale</code> и <code>--force-recreate</code>.</li>
+<li>📖 Перечитать: <a href="https://www.rabbitmq.com/docs/consumer-prefetch" target="_blank">Consumer Prefetch</a>.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-4-2"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-4-2"></label><span class="num">Шаг 4.2</span>Competing consumers + prefetch<a class="anchor" href="#step-4-2">#</a></span><div class="step-body">
+<pre><code>docker compose up -d --scale order-worker=3
+docker compose exec app php artisan lab:orders 1000
+# UI → Queues → order.queue → Consumers: три consumer tag, столбец Prefetch, Unacked по каждому
+# повторить с WORKER_PREFETCH=10 и 100:
+#   правим .env → docker compose up -d --scale order-worker=3 --force-recreate order-worker</code></pre>
+<div class="why"><b>Зачем:</b> при prefetch=1 три воркера получают по одному и делят нагрузку честно. При 100 первый успевший «нахватает» сотню, остальные простаивают — видно в Unacked. Добавьте одному воркеру <code>LAB_SLOW_CONSUMER_MS=200</code> — и посмотрите, как prefetch=100 позволяет медленному держать «заложниками» сотню сообщений.</div>
+<details class="deep"><summary>🔬 Под капотом: как выбрать prefetch, и что такое «консьюмер-заложник»</summary><div class="deep-body">
+<p>Формула из практики: <code>prefetch ≈ (round-trip до брокера) / (время обработки) × запас</code>. Если обработка 50 мс, а сеть 1 мс — prefetch=1 уже почти не теряет пропускной способности (воркер ждёт нового сообщения 2% времени). Если обработка 1 мс (аналитика), prefetch=1 удвоит время на каждое сообщение — тут нужны 50–100. Правило: <b>чем дольше обработка, тем меньше prefetch</b>.</p>
+<p>Prefetch — это ещё и <b>размер потерь при краше</b>: все unacked вернутся в очередь и будут обработаны заново (с проверкой идемпотентности). При prefetch=100 и падении — 100 повторов.</p>
+<p>«Заложники»: медленный воркер с prefetch=100 забрал 100 сообщений, обрабатывает по 200 мс = 20 секунд, а два быстрых воркера стоят с пустой очередью. Consumer utilisation очереди при этом низкая. Лечится маленьким prefetch или (в RabbitMQ 3.8+) <b>consumer priority</b>: медленному — ниже приоритет, брокер отдаёт ему сообщения, только когда быстрые заняты.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ 4.3</span><ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/confirms#automatic-requeueing" target="_blank">Automatic Requeueing</a> — когда брокер возвращает unacked.</li>
+<li>▶ Посмотреть: <a href="https://www.youtube.com/results?search_query=two+generals+problem+exactly+once+delivery+impossible" target="_blank">«Two generals problem exactly-once»</a> — почему exactly-once невозможна в принципе.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-4-3"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-4-3"></label><span class="num">Шаг 4.3</span>Crash test: redelivery и идемпотентность<a class="anchor" href="#step-4-3">#</a></span><div class="step-body">
+<pre><code># 1) грубо: убиваем воркер посреди работы
+docker compose exec app php artisan lab:orders 200
+docker compose kill order-worker          # UI: Unacked → снова Ready, флаг redelivered
+docker compose up -d order-worker         # в логах: "(REDELIVERED)"
+
+# 2) точно: падение ПОСЛЕ коммита, но ДО ack
+LAB_CRASH_BEFORE_ACK=true docker compose up -d --force-recreate order-worker
+docker compose exec app php artisan lab:orders 1
+docker compose logs order-worker          # "CRASH before ack" → контейнер рестартует →
+                                          # "(REDELIVERED)" → "duplicate → ack без обработки"
+# проверка: stock уменьшился ровно один раз, processed_messages содержит одну запись</code></pre>
+<div class="why"><b>Зачем:</b> сценарий 2 — самое важное в лабе. Эффект (stock −1) и маркер закоммичены одной транзакцией, потом процесс умер. Брокер ack не получил → передоставил → воркер увидел маркер → ack без повторного списания. Закомментируйте запись маркера и повторите — stock спишется дважды. Вот ответ на «может ли RabbitMQ гарантировать exactly-once» — нет, at-least-once; exactly-once делаете вы.</div>
+<details class="deep"><summary>🔬 Под капотом: таймлайн краша по миллисекундам, и почему «ровно один раз» — про эффект, а не доставку</summary><div class="deep-body">
+<pre>
+t=0     брокер → воркер: basic.deliver(tag=5)
+t=1     воркер: BEGIN
+t=2     воркер: UPDATE products ... ; INSERT processed_messages
+t=3     воркер: COMMIT                         ← эффект в мире
+t=3.1   воркер: SIGKILL                        ← процесс исчез, ack(5) не отправлен
+t=3.1   ядро ОС: закрывает сокет → TCP FIN/RST брокеру
+t=3.2   брокер: канал закрыт → tag 5 возвращается в order.queue, redelivered=true
+t=4     docker: restart: unless-stopped → новый процесс
+t=6     брокер → новый воркер: basic.deliver(tag=1, redelivered=true)   ← новый канал, теги с 1
+t=7     воркер: SELECT processed_messages → есть → ack(1)
+</pre>
+<p>Заметьте: в новом канале delivery_tag снова начинается с 1 — теги никогда не переживают канал. Поэтому «запомнить tag и подтвердить позже из другого процесса» невозможно, и распределённые системы дедупликации всегда строятся вокруг <b>message_id</b> (свойства сообщения), а не delivery_tag.</p>
+<p><b>Почему SIGKILL, а не exit.</b> При <code>exit()</code> PHP закроет сокет корректно, но всё равно без ack — эффект тот же. SIGKILL честнее имитирует OOM-kill или падение ноды: брокер узнаёт о смерти по TCP, а если бы сеть «зависла» — по heartbeat через 60 с. Попробуйте <code>docker compose pause order-worker</code> (SIGSTOP): процесс жив, сокет открыт, но не отвечает — и посмотрите, сколько времени брокер держит unacked.</p>
+<p><b>Exactly-once.</b> Доставку «ровно один раз» через ненадёжную сеть гарантировать невозможно (проблема двух генералов): любое подтверждение может потеряться. Достижимо только «ровно один раз <i>эффект</i>» — at-least-once доставка + идемпотентный consumer. Все «exactly-once» в Kafka/RabbitMQ Streams — это те же два ингредиента под капотом.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ 5.1</span><ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/confirms#consumer-nacks-requeue" target="_blank">Negative Acknowledgement and Requeuing</a> — nack vs reject, requeue position.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-5-1"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-5-1"></label><span class="num">Шаг 5.1</span>Ломаем почту<a class="anchor" href="#step-5-1">#</a></span><div class="step-body">
+<pre><code>LAB_SIMULATE_SMTP_FAILURE=true docker compose up -d --force-recreate email-worker
+docker compose exec app php artisan lab:orders 1
+docker compose logs email-worker    # "✖ SMTP server unavailable → nack(requeue=false)"</code></pre>
+<div class="why"><b>Зачем:</b> базовый <code>onFailure</code> делает <code>nack(requeue=false)</code>, а у <code>email.queue</code> DLX нет — сообщение <b>исчезло</b>. Осознанная демонстрация: nack без DLX = потеря. Поставьте временно <code>requeue: true</code> — получите бесконечный цикл с redelivered=true. Оба варианта плохи, поэтому — шаг 5.2.</div>
+<details class="deep"><summary>🔬 Под капотом: reject vs nack, позиция при requeue, poison message</summary><div class="deep-body">
+<p><code>basic.reject</code> — из AMQP 0-9-1, одно сообщение. <code>basic.nack</code> — расширение RabbitMQ, умеет <code>multiple=true</code> («всё до тега»). Семантика одинаковая: <code>requeue=true</code> → обратно в очередь, <code>requeue=false</code> → DLX или удаление.</p>
+<p>При requeue сообщение возвращается <b>на своё прежнее место</b> (в голову, если оно было первым), поэтому при постоянной ошибке тот же воркер немедленно получит его снова — тысячи итераций в секунду, лог забит, CPU в потолок, остальные сообщения ждут. Это «poison message». Quorum-очереди умеют считать redelivery (<code>x-delivery-limit</code>) и сами отправлять в DLX после N попыток; у classic такого нет — считать должны вы. Что мы и сделаем.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ 5.2</span><ul>
+<li>📖 Перечитать: раздел 7 целиком, включая «Под капотом» про head-of-line blocking.</li>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/dlx#effects" target="_blank">DLX → Dead-lettered Effects on Messages</a> — структура заголовка <code>x-death</code>.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-5-2"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-5-2"></label><span class="num">Шаг 5.2</span>Retry-цепочка: переопределяем onFailure в EmailWorkerCommand<a class="anchor" href="#step-5-2">#</a></span><div class="step-body">
+<pre><code>// добавить в EmailWorkerCommand
+use PhpAmqpLib\Wire\AMQPTable;
+
+private const MAX_ATTEMPTS = 3;
+
+protected function onFailure(AMQPMessage $msg, \Throwable $e): void
+{
+    $headers = $msg-&gt;has('application_headers') ? $msg-&gt;get('application_headers')-&gt;getNativeData() : [];
+    $attempt = ((int) ($headers['x-retry-count'] ?? 0)) + 1;
+
+    $copy = new AMQPMessage($msg-&gt;getBody(), [
+        'content_type'        =&gt; 'application/json',
+        'delivery_mode'       =&gt; AMQPMessage::DELIVERY_MODE_PERSISTENT,
+        'message_id'          =&gt; $msg-&gt;get('message_id'),          // тот же id — идемпотентность сохраняется
+        'application_headers' =&gt; new AMQPTable($headers + ['x-retry-count' =&gt; $attempt, 'x-last-error' =&gt; $e-&gt;getMessage()]),
+    ]);
+
+    if ($attempt &lt;= self::MAX_ATTEMPTS) {
+        $this-&gt;warn("   ✖ {$e-&gt;getMessage()} → retry.{$attempt}");
+        $this-&gt;channel-&gt;basic_publish($copy, 'email.retry', "retry.{$attempt}");   // → email.retry.N (TTL) → email.dlx → email.queue
+    } else {
+        $this-&gt;error("   ☠ {$e-&gt;getMessage()} → DLQ после {$attempt}-й попытки");
+        $this-&gt;channel-&gt;basic_publish($copy, 'email.dlx', 'dlq');                  // → email.dlq
+    }
+    $msg-&gt;ack();   // оригинал больше не нужен — копия уже в пути
+}</code></pre>
+<pre><code>docker compose up -d --force-recreate email-worker
+docker compose exec app php artisan lab:orders 1
+# UI → Queues: сообщение "живёт" в email.retry.1 ровно 10 сек, возвращается в email.queue,
+# снова падает, уходит в email.retry.2 на 30 сек, потом retry.3 на 5 мин, потом email.dlq.
+# Итого до DLQ ≈ 5 мин 40 сек. На время экспериментов TTL retry.3 можно уменьшить в definitions.json
+# (docker compose down -v &amp;&amp; up — определения перечитаются).</code></pre>
+<div class="why"><b>Зачем:</b> см. раздел 7. В UI откройте сообщение в <code>email.retry.2</code> (Get messages, requeue=true) и посмотрите заголовки <code>x-retry-count</code>, <code>x-last-error</code> и автоматический <code>x-death</code>.</div>
+<details class="deep"><summary>🔬 Под капотом: <code>$headers + [...]</code>, x-death, что теряется при копировании и когда x-death лучше своего счётчика</summary><div class="deep-body">
+<p><code>$headers + [...]</code> в PHP — объединение с приоритетом <b>левого</b> операнда для одинаковых ключей. Здесь это специально: новые значения <code>x-retry-count</code> и <code>x-last-error</code> перезапишут старые только потому, что мы… стоп. Проверьте: с <code>+</code> старый <code>x-retry-count</code> из <code>$headers</code> победит, и счётчик не вырастет. Нужен <code>array_merge($headers, [...])</code> или <code>[...] + $headers</code>. Оставляю это как первую «ловушку»: запустите, увидите в UI, что <code>x-retry-count</code> застрял на 1 и сообщение крутится retry.1 → queue → retry.1 бесконечно, — и исправьте. Так ошибка запомнится лучше, чем правильный код.</p>
+<p><b>Что теряется при копировании.</b> Мы переносим body и четыре свойства. Остальные (<code>timestamp</code>, <code>priority</code>, <code>correlation_id</code>) — нет; заголовок <code>x-death</code> перенесётся внутри <code>$headers</code>, и брокер продолжит его вести. В проде копируют все свойства: <code>$msg->get_properties()</code>.</p>
+<p><b>Свой счётчик vs x-death.</b> <code>x-death</code> ведёт брокер, подделать нельзя, и он есть даже если вы забыли поставить свой заголовок. Но структура вложенная (массив записей по очередям), и у classic-очередей есть нюансы с подсчётом при повторном прохождении той же очереди. Свой плоский <code>x-retry-count</code> проще читать в коде. Многие делают оба: свой — для логики, <code>x-death</code> — для диагностики.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ 5.3</span><ul>
+<li>📖 Почитать: <a href="https://laravel.com/docs/13.x/artisan#tables" target="_blank">Laravel 13: Artisan → Tables</a> — вывод <code>$this->table()</code>.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-5-3"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-5-3"></label><span class="num">Шаг 5.3</span>Читатель DLQ — <span class="file">app/Console/Commands/Workers/FailedEmailWorkerCommand.php<a class="anchor" href="#step-5-3">#</a></span></span><div class="step-body">
+<pre><code>&lt;?php
+namespace App\Console\Commands\Workers;
+
+use App\Services\Amqp\AmqpConnectionFactory;
+use Illuminate\Console\Command;
+use PhpAmqpLib\Message\AMQPMessage;
+
+class FailedEmailWorkerCommand extends Command
+{
+    protected $signature = 'worker:failed-email';
+
+    public function handle(AmqpConnectionFactory $factory): int
+    {
+        $ch = $factory-&gt;connect()-&gt;channel();
+        $ch-&gt;basic_consume('email.dlq', 'failed-email', no_ack: false, callback: function (AMQPMessage $m) {
+            $h = $m-&gt;get('application_headers')?-&gt;getNativeData() ?? [];
+            $this-&gt;table(['field', 'value'], [
+                ['message_id', $m-&gt;get('message_id')],
+                ['attempts',   $h['x-retry-count'] ?? '?'],
+                ['reason',     $h['x-last-error'] ?? '?'],
+                ['failed_at',  now()-&gt;toDateTimeString()],
+                ['body',       $m-&gt;getBody()],
+            ]);
+            $m-&gt;ack();
+        });
+        while ($ch-&gt;is_consuming()) { $ch-&gt;wait(); }
+        return self::SUCCESS;
+    }
+}</code></pre>
+<div class="why"><b>Зачем:</b> DLQ — не «помойка», а очередь для отдельного потребителя: логирование, алерт, ручной разбор. Домашнее задание: писать в таблицу <code>failed_emails</code> и добавить <code>lab:retry-failed</code>, который заново публикует в <code>email.queue</code> с обнулённым счётчиком.</div>
+<details class="deep"><summary>🔬 Под капотом: что делать с DLQ в проде</summary><div class="deep-body">
+<p>Три стратегии: (1) <b>алерт</b> — метрика «сообщений в DLQ &gt; 0» в Prometheus/Grafana, дежурный разбирается; (2) <b>parking lot</b> — сохранить в БД с полным контекстом и удалить из очереди, чтобы DLQ не росла; (3) <b>автоматический replay</b> после устранения причины — команда, которая перекладывает из DLQ обратно с обнулённым счётчиком (обязательно с лимитом, иначе получите цикл). Все три требуют, чтобы у сообщения был <code>message_id</code> и человекочитаемый <code>x-last-error</code> — что мы и обеспечили.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ <a href="#step-5-4">5.4</a></span><ul>
+<li>📖 Почитать: <a href="https://laravel.com/docs/13.x/queues#dealing-with-failed-jobs" target="_blank">Laravel 13: Queues → Failed Jobs</a> и <a href="https://laravel.com/docs/13.x/queues#max-job-attempts-and-timeout" target="_blank">Max Attempts &amp; Backoff</a>.</li>
+<li>📖 Почитать: <a href="https://github.com/vyuldashev/laravel-queue-rabbitmq#readme" target="_blank">README laravel-queue-rabbitmq</a> — раздел про delayed jobs (там описано, как пакет делает задержку через TTL+DLX).</li></ul></div>
+</div></div>
+
+<div class="step" id="step-5-4"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-5-4"></label><span class="num">Шаг 5.4</span>Слой Laravel Queue (для сравнения) — <span class="file">app/Jobs/SendOrderEmailJob.php<a class="anchor" href="#step-5-4">#</a></span></span><div class="step-body">
+<pre><code>// config/queue.php → connections
+'rabbitmq' =&gt; [
+    'driver' =&gt; 'rabbitmq', 'queue' =&gt; env('RABBITMQ_QUEUE', 'laravel.jobs'),
+    'hosts' =&gt; [[ 'host' =&gt; env('RABBITMQ_HOST'), 'port' =&gt; env('RABBITMQ_PORT'),
+                  'user' =&gt; env('RABBITMQ_USER'), 'password' =&gt; env('RABBITMQ_PASSWORD'), 'vhost' =&gt; env('RABBITMQ_VHOST') ]],
+    'options' =&gt; ['queue' =&gt; ['prioritize_delayed' =&gt; true]],
+],</code></pre>
+<pre><code>&lt;?php // app/Jobs/SendOrderEmailJob.php
+namespace App\Jobs;
+
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Mail;
+
+class SendOrderEmailJob implements ShouldQueue
+{
+    use Queueable;
+    public int $tries = 4;
+    public array $backoff = [10, 30, 300];      // те же 10с / 30с / 5мин — но одной строкой
+
+    public function __construct(public int $orderId, public int $userId) {}
+
+    public function handle(): void
+    {
+        if (config('lab.simulate_smtp_failure')) { throw new \RuntimeException('SMTP server unavailable'); }
+        Mail::raw("Заказ №{$this-&gt;orderId} (via Laravel Queue)", fn ($m) =&gt; $m-&gt;to("user{$this-&gt;userId}@lab.test"));
+    }
+}</code></pre>
+<pre><code>php artisan tinker --execute="App\Jobs\SendOrderEmailJob::dispatch(1, 15)-&gt;onConnection('rabbitmq');"
+php artisan queue:work rabbitmq --queue=laravel.jobs -v
+php artisan queue:failed         # после 4 неудач job окажется здесь</code></pre>
+<div class="why"><b>Зачем:</b> то, что вы построили руками в шагах <a href="#step-3-2">3.2</a>–5.3, Laravel даёт за <code>$tries</code>/<code>$backoff</code> и <code>failed_jobs</code>. Загляните в UI: пакет сам создал очередь <code>laravel.jobs</code> и для отложенных retry — очередь с TTL и DLX, устроенную ровно как ваша <code>email.retry.N</code>.</div>
+<details class="deep"><summary>🔬 Под капотом: что именно делает драйвер, и где абстракция протекает</summary><div class="deep-body">
+<p>Драйвер сериализует Job (класс + свойства) в JSON, публикует в <code>laravel.jobs</code>; <code>queue:work</code> — это consume с prefetch=1 и ручным ack после <code>handle()</code>. При исключении: если попытки остались — <code>release($delay)</code> = публикация в очередь <code>laravel.jobs.delay.{ms}</code> с TTL и DLX обратно (пакет создаёт по очереди на каждую уникальную задержку — ровно наша схема), иначе — запись в <code>failed_jobs</code> и ack. Счётчик попыток — в теле JSON, не в заголовках.</p>
+<p><b>Где протекает.</b> Consumer должен быть Laravel-приложением с тем же классом Job (не подойдёт для Python/Go-сервиса). Идемпотентности нет — <code>ShouldBeUnique</code> защищает от дублей в очереди, но не от redelivery после падения. Prefetch фиксирован. Publisher confirms по умолчанию выключены. Всё это нормально для «внутренних задач приложения» и не подходит для «событий между сервисами» — там нужен сырой слой.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД СЕССИЕЙ <a href="#session-3">3</a></span><ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/priority" target="_blank">Priority Queue Support</a> — особенно раздел про взаимодействие с prefetch.</li>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/tutorials/tutorial-three-php" target="_blank">Tutorial 3 (PHP): Publish/Subscribe</a> — fanout на php-amqplib.</li></ul></div>
+</div></div>
+
+<div class="session-banner" id="session-3">СЕССИЯ <a href="#session-3">3</a> — Priority, Fanout, Production Hell <span>~3 часа</span></div>
+
+<div class="step" id="step-6-1"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-6-1"></label><span class="num">Шаг 6.1</span>Priority с backlog<a class="anchor" href="#step-6-1">#</a></span><div class="step-body">
+<pre><code>docker compose stop order-worker
+docker compose exec app php artisan lab:orders 20 --priority=1
+docker compose exec app php artisan lab:orders 20 --priority=10
+docker compose exec app php artisan lab:orders 20 --priority=1
+docker compose start order-worker &amp;&amp; docker compose logs -f order-worker</code></pre>
+<div class="why"><b>Зачем:</b> в логах первыми пройдут 20 сообщений с priority=10, хотя были опубликованы в середине. Повторите, не останавливая воркер — порядок будет почти FIFO.</div>
+<details class="deep"><summary>🔬 Под капотом: приоритет + prefetch = сюрприз</summary><div class="deep-body">
+<p>Приоритет решает, что <b>следующим</b> уйдёт consumer'у. Но если consumer уже забрал 100 сообщений с priority=1 (prefetch=100), а потом пришло одно с priority=10 — оно будет ждать, пока consumer не освободит слот. С prefetch=1 срочное сообщение уйдёт следующим же. Ещё одна причина держать prefetch маленьким там, где важна latency срочных задач.</p>
+<p>Также: priority не влияет на порядок <i>внутри</i> одного уровня (там FIFO), и на сообщения, уже сидящие в retry-очередях (они вернутся с тем же priority, но в общую очередь по времени возврата).</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ 6.2</span><ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/queues#temporary-queues" target="_blank">Queues → Temporary queues</a> — exclusive/auto-delete, типичные для broadcast-подписчиков.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-6-2"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-6-2"></label><span class="num">Шаг 6.2</span>Fanout — <span class="file">Lab/BroadcastCommand.php<a class="anchor" href="#step-6-2">#</a></span> и <span class="file">Workers/BroadcastDemoWorkerCommand.php</span></span><div class="step-body">
+<pre><code>// lab:broadcast {text}
+$ch = $factory-&gt;connect()-&gt;channel();
+$ch-&gt;basic_publish(new AMQPMessage($this-&gt;argument('text')), 'system.broadcast', 'этот-ключ-никто-не-читает');
+
+// worker:broadcast {queue}
+$ch-&gt;basic_consume($this-&gt;argument('queue'), '', no_ack: true,
+    callback: fn (AMQPMessage $m) =&gt; $this-&gt;info("[{$this-&gt;argument('queue')}] " . $m-&gt;getBody()));
+while ($ch-&gt;is_consuming()) { $ch-&gt;wait(); }</code></pre>
+<pre><code># три терминала
+docker compose exec app php artisan worker:broadcast broadcast.a
+docker compose exec app php artisan worker:broadcast broadcast.b
+docker compose exec app php artisan worker:broadcast broadcast.c
+# четвёртый
+docker compose exec app php artisan lab:broadcast "Техработы в 03:00"</code></pre>
+<div class="why"><b>Зачем:</b> один publish — три копии, routing key проигнорирован. Здесь <code>no_ack=true</code> — auto-ack: для уведомлений, которые не жалко потерять, нормально; для заказов — нет.</div>
+<details class="deep"><summary>🔬 Под капотом: fanout vs topic «#», и почему broadcast-подписчики обычно временные</summary><div class="deep-body">
+<p>Topic exchange с биндингом <code>#</code> даёт тот же результат, что fanout. Разница — в производительности (fanout не сравнивает ключи вообще) и в намерении: fanout явно говорит «это широковещание». Реальные подписчики broadcast — часто живые процессы (веб-сокет-сервер, кеш-инвалидатор), которым нужна <b>своя</b> очередь, пока они живы: объявляют <code>exclusive=true, auto_delete=true</code> без имени (брокер сгенерирует <code>amq.gen-...</code>) и биндят к fanout. Умер процесс — очередь исчезла, сообщения не копятся. У нас очереди постоянные, чтобы было видно в UI.</p>
+</div></details>
+<div class="next-box"><span class="tag">ПЕРЕД ШАГОМ <a href="#step-6-3">6.3</a></span><ul>
+<li>📖 Почитать: <a href="https://www.rabbitmq.com/docs/monitoring" target="_blank">Monitoring</a> — какие метрики смотреть, когда «что-то не так».</li>
+<li>▶ Посмотреть: <a href="https://www.youtube.com/results?search_query=RabbitMQ+production+failure+scenarios+troubleshooting" target="_blank">«RabbitMQ production failure scenarios»</a>.</li></ul></div>
+</div></div>
+
+<div class="step" id="step-6-3"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-6-3"></label><span class="num">Шаг <a href="#step-6-3">6.3</a></span>Production Hell — задания без подсказок<a class="anchor" href="#step-6-3">#</a></span><div class="step-body">
+<table>
+<tr><th>#</th><th>Что ломаем</th><th>Как</th><th>Что должно случиться после вашего фикса</th></tr>
+<tr><td>1</td><td>Дубль сообщения</td><td>UI → email.queue → Publish тот же message_id дважды</td><td>одно письмо, второе — «duplicate → ack»</td></tr>
+<tr><td>2</td><td>SMTP недоступен 2 минуты</td><td>LAB_SIMULATE_SMTP_FAILURE=true, через 2 мин — false, пересоздать воркер</td><td>письмо доходит со 2-й или 3-й попытки, DLQ пуст</td></tr>
+<tr><td>3</td><td>БД упала</td><td><code>docker compose stop postgres</code> на 30 сек при 500 сообщениях в order.queue</td><td>воркеры не теряют сообщений; после старта БД всё дообрабатывается (nack? reconnect? retry-очередь для order.queue?)</td></tr>
+<tr><td>4</td><td>Медленный consumer</td><td>один воркер с LAB_SLOW_CONSUMER_MS=2000 при prefetch=100</td><td>подобрать prefetch, при котором быстрые воркеры не простаивают</td></tr>
+<tr><td>5</td><td>Нет товара</td><td>заказ на 6 Monitor</td><td>заказ → cancelled, событие order.cancelled в analytics; сообщение НЕ крутится в retry (это бизнес-ошибка, а не сбой)</td></tr>
+<tr><td>6</td><td>Гонка за последний товар</td><td>3 воркера, 10 заказов на последний Monitor</td><td>ровно один reserved, stock = 0, не −9</td></tr>
+<tr><td>7</td><td>Graceful shutdown</td><td><code>docker compose stop order-worker</code> под нагрузкой</td><td>текущее сообщение дообработано и ack'нуто, лишних redelivered нет</td></tr>
+<tr><td>8</td><td>Долгая обработка</td><td>LAB_SLOW_CONSUMER_MS=90000 у одного воркера</td><td>понять, почему брокер «убил» соединение и как это лечится (см. шаг <a href="#step-3-1">3.1</a>)</td></tr>
+<tr><td>9</td><td>Опечатка в routing key</td><td>опубликовать <code>orders.created</code> из UI</td><td>сообщение исчезает молча; добавить mandatory + return listener в relay, чтобы это стало видно</td></tr>
+</table>
+<div class="why"><b>Зачем:</b> задание 5 — самое поучительное: разделить <i>transient</i> ошибки (SMTP, БД — ретраить) и <i>permanent</i> (нет товара — не ретраить, а обработать как бизнес-исход). В базовом классе для этого не хватает одного <code>instanceof</code> — найдите, где. Задание 3 — самое сложное: подумайте, что должен делать воркер, если БД недоступна: nack без requeue потеряет сообщение, nack с requeue устроит шторм, а «просто подождать и попробовать снова» требует отдельной логики реконнекта к БД.</div>
+<div class="next-box"><span class="tag">ПОСЛЕ ЛАБЫ</span><ul>
+<li>📖 Раздел <a href="#sec-12">12</a> — пройдите вопросы вслух, как на собеседовании.</li>
+<li>📖 Раздел <a href="#sec-13">13</a> — куда двигаться дальше.</li></ul></div>
+</div></div>
+
+<h2 id="sec-10"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-10"></label>10. Полный чек-лист концепций <a class="anchor" href="#sec-10">#</a></h2>
+<table>
+<tr><th>Категория</th><th>Темы</th><th>Где в сборке</th></tr>
+<tr><td>Модель AMQP</td><td>Connection, Channel, Frames, Properties, Headers, Delivery tag</td><td><a href="#sec-2">2.1</a>, <a href="#sec-2">2.4</a>, <a href="#sec-2">2.6</a>, <a href="#step-3-2">3.2</a></td></tr>
+<tr><td>Топология</td><td>Exchange, Queue, Routing Key, Binding, Direct, Topic, Fanout, Headers</td><td><a href="#step-1-2">1.2</a>, <a href="#step-1-7">1.7</a>, <a href="#step-6-2">6.2</a></td></tr>
+<tr><td>Надёжность потребителя</td><td>ACK, NACK, Reject, Requeue, Redelivery, Prefetch, Competing Consumers, Heartbeat</td><td><a href="#step-3-1">3.1</a>, <a href="#step-3-2">3.2</a>, <a href="#step-4-2">4.2</a>, <a href="#step-4-3">4.3</a>, <a href="#step-5-1">5.1</a></td></tr>
+<tr><td>Надёжность издателя</td><td>Publisher Confirms, Mandatory/Return, Outbox Pattern, транзакции, race conditions</td><td><a href="#sec-2">2.1</a>, <a href="#sec-2">2.2</a>, <a href="#step-3-3">3.3</a>, <a href="#step-3-4">3.4</a></td></tr>
+<tr><td>Отказоустойчивость</td><td>Retry, TTL, DLX, DLQ, x-death, Graceful Shutdown, Worker Crash, Poison message</td><td><a href="#step-1-2">1.2</a>, <a href="#step-5-1">5.1</a>, <a href="#step-5-2">5.2</a>, <a href="#step-5-3">5.3</a>, <a href="#step-4-3">4.3</a>, <a href="#step-6-3">6.3</a></td></tr>
+<tr><td>Корректность данных</td><td>Idempotency, Duplicate Messages, Unique index, FOR UPDATE, Deadlock ordering</td><td><a href="#step-1-8">1.8</a>, <a href="#step-3-2">3.2</a>, <a href="#step-3-4">3.4</a>, <a href="#step-5-2">5.2</a></td></tr>
+<tr><td>Производительность</td><td>Priority Queues, Persistent Messages, Durable Queues, Prefetch tuning, Consumer utilisation</td><td><a href="#step-1-2">1.2</a>, <a href="#step-3-3">3.3</a>, <a href="#step-4-2">4.2</a>, <a href="#step-6-1">6.1</a></td></tr>
+<tr><td>Наблюдаемость</td><td>Management UI, Ready/Unacked/Redelivered, Connections/Channels, x-death</td><td><a href="#step-1-7">1.7</a>, <a href="#step-4-2">4.2</a>, <a href="#step-5-2">5.2</a></td></tr>
+<tr><td>Интеграция с Laravel</td><td>Laravel Jobs, $tries/$backoff, failed_jobs, где абстракция протекает</td><td><a href="#step-5-4">5.4</a></td></tr>
+</table>
+
+<h2 id="sec-11"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-11"></label>11. Глоссарий терминов <a class="anchor" href="#sec-11">#</a></h2>
+<p class="small">В порядке первого появления в тексте.</p>
+<div class="glossary">
+<p class="glossary-item" id="term-1"><b>1. Exchange</b> <a class="back" href="#ref-1" title="к первому упоминанию">↩</a> — компонент RabbitMQ, который получает сообщение от издателя и решает, в какую очередь (или очереди) его направить, на основе routing key и правил binding. Сам по себе exchange сообщения не хранит.</p>
+<p class="glossary-item" id="term-2"><b>2. Fanout exchange</b> <a class="back" href="#ref-2" title="к первому упоминанию">↩</a> — тип exchange, который рассылает копию сообщения во все привязанные очереди, полностью игнорируя routing key. Для случаев «все должны узнать».</p>
+<p class="glossary-item" id="term-3"><b>3. Routing key</b> <a class="back" href="#ref-3" title="к первому упоминанию">↩</a> — метка, которую издатель прикрепляет к сообщению при публикации. Exchange использует её вместе с правилами binding, чтобы решить, куда отправить сообщение.</p>
+<p class="glossary-item" id="term-4"><b>4. TTL (Time To Live)</b> <a class="back" href="#ref-4" title="к первому упоминанию">↩</a> — время жизни сообщения в очереди. По истечении RabbitMQ не удаляет сообщение, а (если у очереди настроен DLX) перенаправляет его — так эмулируется отложенный retry. Просроченное сообщение удаляется только когда доходит до головы очереди.</p>
+<p class="glossary-item" id="term-5"><b>5. Dead Letter Exchange (DLX)</b> <a class="back" href="#ref-5" title="к первому упоминанию">↩</a> — обычный exchange, в который очередь автоматически отправляет сообщение, если оно отклонено (nack/reject без requeue), истёк TTL или превышена длина очереди. Указывается аргументом <code>x-dead-letter-exchange</code>.</p>
+<p class="glossary-item" id="term-6"><b>6. Prefetch (prefetch count)</b> <a class="back" href="#ref-6" title="к первому упоминанию">↩</a> — сколько неподтверждённых сообщений брокер может одновременно выдать одному consumer'у. При prefetch=1 новое сообщение не придёт, пока предыдущее не подтверждено.</p>
+<p class="glossary-item" id="term-7"><b>7. ACK (acknowledgement)</b> <a class="back" href="#ref-7" title="к первому упоминанию">↩</a> — подтверждение от consumer'а брокеру по delivery tag: «обработано, можно удалить». Без ACK брокер считает сообщение «в работе» (unacked).</p>
+<p class="glossary-item" id="term-8"><b>8. NACK</b> <a class="back" href="#ref-8" title="к первому упоминанию">↩</a> — сигнал «не обработано». С <code>requeue=true</code> вернётся в очередь на прежнее место, с <code>requeue=false</code> уйдёт в DLX (или пропадёт, если DLX нет). В отличие от reject умеет отклонять пачкой.</p>
+<p class="glossary-item" id="term-9"><b>9. Publisher Confirms</b> <a class="back" href="#ref-9" title="к первому упоминанию">↩</a> — режим канала, в котором брокер подтверждает издателю приём каждого сообщения (по порядковому номеру публикации). Без него publish — «выстрелил и забыл».</p>
+<p class="glossary-item" id="term-10"><b>10. Outbox Pattern</b> <a class="back" href="#ref-10" title="к первому упоминанию">↩</a> — событие сначала пишется в таблицу БД в одной транзакции с основными данными; отдельный процесс (relay) потом публикует его в брокер. Гарантирует, что «данные есть, а события нет» не случится; даёт at-least-once публикацию.</p>
+<p class="glossary-item" id="term-11"><b>11. Priority queue</b> <a class="back" href="#ref-11" title="к первому упоминанию">↩</a> — очередь с аргументом <code>x-max-priority</code>: при выдаче consumer'у предпочитает сообщения с большим полем priority. Работает как набор подочередей по уровням.</p>
+<p class="glossary-item" id="term-12"><b>12. Backlog</b> <a class="back" href="#ref-12" title="к первому упоминанию">↩</a> — накопившиеся в очереди сообщения, которые consumer ещё не забрал. Появляется, когда публикуют быстрее, чем обрабатывают.</p>
+<p class="glossary-item" id="term-13"><b>13. Competing consumers</b> <a class="back" href="#ref-13" title="к первому упоминанию">↩</a> — несколько consumer'ов на одной очереди; брокер распределяет сообщения между ними (round-robin среди тех, у кого есть свободный prefetch-слот) — горизонтальное масштабирование обработки.</p>
+<p class="glossary-item" id="term-14"><b>14. Dead Letter Queue (DLQ)</b> <a class="back" href="#ref-14" title="к первому упоминанию">↩</a> — очередь, куда в итоге попадают сообщения, которые не удалось обработать после всех попыток. Читается отдельным сервисом для логирования/ручного разбора.</p>
+<p class="glossary-item" id="term-15"><b>15. Идемпотентность</b> <a class="back" href="#ref-15" title="к первому упоминанию">↩</a> — свойство обработчика: повторная обработка того же сообщения (из-за redelivery) не даёт повторного эффекта. Реализуется маркером «уже обработано» в той же транзакции, что и эффект, с уникальным индексом.</p>
+<p class="glossary-item" id="term-16"><b>16. Redelivery</b> <a class="back" href="#ref-16" title="к первому упоминанию">↩</a> — повторная доставка сообщения брокером, если предыдущая попытка не завершилась ACK (consumer упал, соединение оборвалось, nack с requeue=true). Брокер ставит флаг <code>redelivered=true</code>.</p>
+<p class="glossary-item" id="term-17"><b>17. Binding</b> <a class="back" href="#ref-17" title="к первому упоминанию">↩</a> — правило «exchange → очередь» с routing key или паттерном (<code>order.*</code>), по которому сообщение попадает в очередь.</p>
+<p class="glossary-item" id="term-18"><b>18. Message headers</b> <a class="back" href="#ref-18" title="к первому упоминанию">↩</a> — произвольные пары ключ-значение при сообщении (как HTTP-заголовки): счётчик попыток, trace-id, текст последней ошибки. RabbitMQ сам добавляет <code>x-death</code> при dead-lettering.</p>
+<p class="glossary-item" id="term-19"><b>19. Graceful shutdown</b> <a class="back" href="#ref-19" title="к первому упоминанию">↩</a> — корректная остановка воркера: дообработать текущее сообщение, ack'нуть, закрыть канал и соединение, и только потом выйти. Достигается перехватом SIGTERM.</p>
+<p class="glossary-item" id="term-20"><b>20. Persistent message</b> <a class="back" href="#ref-20" title="к первому упоминанию">↩</a> — сообщение с <code>delivery_mode=2</code>: брокер пишет его на диск. Без durable-очереди бесполезно — нужны оба флага.</p>
+<p class="glossary-item" id="term-21"><b>21. Durable queue</b> <a class="back" href="#ref-21" title="к первому упоминанию">↩</a> — очередь с <code>durable=true</code>: переживает перезапуск брокера. Сообщения в ней сохранятся, только если они persistent.</p>
+</div>
+
+<h2 id="sec-12"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-12"></label>12. Вопросы для самопроверки / собеседования <a class="anchor" href="#sec-12">#</a></h2>
+<ul>
+<li>Чем connection отличается от channel, и почему нельзя открывать соединение на каждое сообщение?</li>
+<li>Что такое Exchange, и чем Direct отличается от Topic? Почему одного Topic хватило на весь проект?</li>
+<li>Зачем нужен Fanout, и чем он отличается от Topic с биндингом <code>#</code>?</li>
+<li>Что произойдёт с сообщением, если под его routing key нет ни одного биндинга? Как это обнаружить?</li>
+<li>Что произойдёт, если consumer умер после обработки сообщения, но до ACK? (шаг <a href="#step-4-3">4.3</a>)</li>
+<li>Что такое delivery tag, почему он привязан к каналу, и почему дедупликацию строят на message_id?</li>
+<li>Что такое redelivery и откуда брокер знает, что нужно передоставить сообщение? Причём тут heartbeat?</li>
+<li>Что такое prefetch и как он влияет на балансировку между consumers? Когда prefetch=100 вредит?</li>
+<li>Как реализовать retry с задержкой без плагина? Почему одной retry-очереди с per-message TTL недостаточно?</li>
+<li>Почему в многоступенчатом retry одного nack недостаточно?</li>
+<li>Что такое DLX и зачем нужна DLQ? Что делает <code>x-death</code>?</li>
+<li>Как избежать повторной обработки сообщения? Почему маркер должен быть в той же транзакции, что и эффект, и зачем уникальный индекс?</li>
+<li>Может ли RabbitMQ гарантировать exactly-once? Кто тогда её обеспечивает?</li>
+<li>Durable queue, persistent message, publisher confirm — почему нужны все три?</li>
+<li>Что решает Outbox Pattern, и какую проблему он закрывает, которую не решает сам RabbitMQ?</li>
+<li>Почему priority queue может «не сработать» визуально, даже если настроена правильно?</li>
+<li>Чем transient-ошибка отличается от permanent, и почему их нельзя ретраить одинаково?</li>
+<li>Что Laravel Queue делает за вас, и когда этой абстракции недостаточно?</li>
+<li>Classic vs quorum queue — в чём разница и когда что выбирать?</li>
+</ul>
+
+<h2 id="sec-13"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-13"></label>13. Что дальше: дорожная карта после лабы <a class="anchor" href="#sec-13">#</a></h2>
+<table>
+<tr><th>Тема</th><th>Что это</th><th>Зачем после лабы</th><th>Почитать</th></tr>
+<tr><td>Quorum queues</td><td>реплицируемые очереди на Raft, стандарт в RabbitMQ 4</td><td>кластер, отказоустойчивость брокера, <code>x-delivery-limit</code> для poison messages</td><td><a href="https://www.rabbitmq.com/docs/quorum-queues" target="_blank">docs/quorum-queues</a></td></tr>
+<tr><td>Streams</td><td>append-only лог с повторным чтением (как Kafka)</td><td>replay событий, несколько consumer'ов читают одно и то же</td><td><a href="https://www.rabbitmq.com/docs/streams" target="_blank">docs/streams</a></td></tr>
+<tr><td>Policies</td><td>TTL/DLX/лимиты по паттерну имени, меняются на лету</td><td>заменить <code>x-*</code> аргументы из definitions.json</td><td><a href="https://www.rabbitmq.com/docs/parameters#policies" target="_blank">docs/parameters</a></td></tr>
+<tr><td>Single Active Consumer</td><td>только один consumer активен, остальные — в резерве</td><td>порядок обработки событий одного заказа</td><td><a href="https://www.rabbitmq.com/docs/consumers#single-active-consumer" target="_blank">docs/consumers</a></td></tr>
+<tr><td>Consistent Hash Exchange</td><td>маршрутизация по хешу ключа в N очередей</td><td>порядок в рамках ключа + масштабирование</td><td><a href="https://github.com/rabbitmq/rabbitmq-server/tree/main/deps/rabbitmq_consistent_hash_exchange" target="_blank">плагин</a></td></tr>
+<tr><td>Prometheus + Grafana</td><td>метрики брокера и очередей</td><td>алерты на DLQ, backlog, unacked</td><td><a href="https://www.rabbitmq.com/docs/prometheus" target="_blank">docs/prometheus</a></td></tr>
+<tr><td>Clustering &amp; Federation</td><td>несколько узлов; связь между кластерами</td><td>HA, гео-распределение</td><td><a href="https://www.rabbitmq.com/docs/clustering" target="_blank">docs/clustering</a></td></tr>
+<tr><td>Delayed Message plugin</td><td>отложенные сообщения без TTL-очередей</td><td>сравнить с тем, что сделали руками</td><td><a href="https://github.com/rabbitmq/rabbitmq-delayed-message-exchange" target="_blank">плагин</a></td></tr>
+<tr><td>Saga / Process manager</td><td>долгие бизнес-процессы через события с компенсациями</td><td>order.paid → reserve → ship → complete с откатами</td><td><a href="https://microservices.io/patterns/data/saga.html" target="_blank">microservices.io/saga</a></td></tr>
+</table>
+
+</main>
+</div>
+<a class="totop" href="#top">↑ Наверх</a>
+
+<script>
+(function () {
+  var KEY = 'rmq-lab-progress', NAVKEY = 'rmq-lab-nav';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+  var boxes = document.querySelectorAll('input.done');
+  function apply() {
+    var total = boxes.length, done = 0;
+    boxes.forEach(function (b) {
+      var k = b.dataset.key, on = !!state[k];
+      b.checked = on; if (on) done++;
+      var host = b.closest('.step') || b.closest('h2');
+      if (host) host.classList.toggle('is-done', on);
+      var nav = document.querySelector('.sidebar a[data-key="' + k + '"]');
+      if (nav) nav.classList.toggle('done', on);
+    });
+    document.getElementById('progress-fill').style.width = (total ? done / total * 100 : 0) + '%';
+    document.getElementById('progress-text').textContent = 'Пройдено: ' + done + ' / ' + total;
+  }
+  boxes.forEach(function (b) {
+    b.addEventListener('change', function () {
+      state[b.dataset.key] = b.checked;
+      localStorage.setItem(KEY, JSON.stringify(state));
+      apply();
+    });
+  });
+  document.getElementById('reset-progress').addEventListener('click', function () {
+    if (confirm('Сбросить все отметки?')) { state = {}; localStorage.removeItem(KEY); apply(); }
+  });
+  apply();
+
+  var toggle = document.getElementById('nav-toggle');
+  function setNav(collapsed) {
+    document.body.classList.toggle('nav-collapsed', collapsed);
+    localStorage.setItem(NAVKEY, collapsed ? '1' : '0');
+    toggle.textContent = collapsed ? '☰' : '✕';
+    toggle.title = collapsed ? 'Показать оглавление' : 'Скрыть оглавление';
+  }
+  toggle.addEventListener('click', function () { setNav(!document.body.classList.contains('nav-collapsed')); });
+  setNav(localStorage.getItem(NAVKEY) === '1' || window.innerWidth < 900);
+
+  // клик по чекбоксу в заголовке не должен вести по якорю
+  document.querySelectorAll('.done-label').forEach(function (l) { l.addEventListener('click', function (e) { e.stopPropagation(); }); });
+})();
+</script>
+</body>
+</html>

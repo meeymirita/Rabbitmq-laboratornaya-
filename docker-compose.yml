@@ -1,0 +1,45 @@
+x-app: &app
+  build: ./laravel-app
+  volumes:
+    - ./laravel-app:/var/www
+  env_file: ./laravel-app/.env
+  depends_on:
+    postgres:  { condition: service_healthy }
+    rabbitmq:  { condition: service_healthy }
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:16
+    environment: { POSTGRES_DB: lab, POSTGRES_USER: lab, POSTGRES_PASSWORD: lab }
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U lab"], interval: 5s, retries: 10 }
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    environment: { RABBITMQ_DEFAULT_USER: lab, RABBITMQ_DEFAULT_PASS: lab }
+    ports: ["5672:5672", "15672:15672"]
+    volumes:
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck: { test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"], interval: 5s, retries: 20 }
+
+  mailpit:
+    image: axllent/mailpit
+    ports: ["8025:8025", "1025:1025"]
+
+  app:
+    <<: *app
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    ports: ["8000:8000"]
+    restart: "no"
+
+#  outbox-relay:     { <<: *app, command: php artisan worker:outbox-relay }
+#  order-worker:     { <<: *app, command: php artisan worker:order }
+#  email-worker:     { <<: *app, command: php artisan worker:email }
+#  analytics-worker: { <<: *app, command: php artisan worker:analytics }
+#  failed-email-worker: { <<: *app, command: php artisan worker:failed-email }
+
+volumes:
+  pgdata:

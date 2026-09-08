@@ -1,0 +1,44 @@
+{
+  "vhosts": [{ "name": "/" }],
+  "exchanges": [
+    { "name": "orders.topic",     "vhost": "/", "type": "topic",  "durable": true },
+    { "name": "email.retry",      "vhost": "/", "type": "direct", "durable": true },
+    { "name": "email.dlx",        "vhost": "/", "type": "direct", "durable": true },
+    { "name": "system.broadcast", "vhost": "/", "type": "fanout", "durable": true }
+  ],
+  "queues": [
+    { "name": "order.queue",     "vhost": "/", "durable": true, "arguments": { "x-queue-type": "classic", "x-max-priority": 10 } },
+    { "name": "email.queue",     "vhost": "/", "durable": true, "arguments": { "x-queue-type": "classic" } },
+    { "name": "analytics.queue", "vhost": "/", "durable": true, "arguments": { "x-queue-type": "classic" } },
+
+    { "name": "email.retry.1", "vhost": "/", "durable": true, "arguments": {
+      "x-queue-type": "classic", "x-message-ttl": 10000,
+      "x-dead-letter-exchange": "email.dlx", "x-dead-letter-routing-key": "email" } },
+    { "name": "email.retry.2", "vhost": "/", "durable": true, "arguments": {
+      "x-queue-type": "classic", "x-message-ttl": 30000,
+      "x-dead-letter-exchange": "email.dlx", "x-dead-letter-routing-key": "email" } },
+    { "name": "email.retry.3", "vhost": "/", "durable": true, "arguments": {
+      "x-queue-type": "classic", "x-message-ttl": 300000,
+      "x-dead-letter-exchange": "email.dlx", "x-dead-letter-routing-key": "email" } },
+    { "name": "email.dlq",   "vhost": "/", "durable": true, "arguments": { "x-queue-type": "classic" } },
+
+    { "name": "broadcast.a", "vhost": "/", "durable": true },
+    { "name": "broadcast.b", "vhost": "/", "durable": true },
+    { "name": "broadcast.c", "vhost": "/", "durable": true }
+  ],
+  "bindings": [
+    { "source": "orders.topic", "vhost": "/", "destination": "order.queue",     "destination_type": "queue", "routing_key": "order.created" },
+    { "source": "orders.topic", "vhost": "/", "destination": "email.queue",     "destination_type": "queue", "routing_key": "order.created" },
+    { "source": "orders.topic", "vhost": "/", "destination": "analytics.queue", "destination_type": "queue", "routing_key": "order.*" },
+
+    { "source": "email.retry", "vhost": "/", "destination": "email.retry.1", "destination_type": "queue", "routing_key": "retry.1" },
+    { "source": "email.retry", "vhost": "/", "destination": "email.retry.2", "destination_type": "queue", "routing_key": "retry.2" },
+    { "source": "email.retry", "vhost": "/", "destination": "email.retry.3", "destination_type": "queue", "routing_key": "retry.3" },
+    { "source": "email.dlx",   "vhost": "/", "destination": "email.queue",   "destination_type": "queue", "routing_key": "email" },
+    { "source": "email.dlx",   "vhost": "/", "destination": "email.dlq",     "destination_type": "queue", "routing_key": "dlq" },
+
+    { "source": "system.broadcast", "vhost": "/", "destination": "broadcast.a", "destination_type": "queue", "routing_key": "" },
+    { "source": "system.broadcast", "vhost": "/", "destination": "broadcast.b", "destination_type": "queue", "routing_key": "" },
+    { "source": "system.broadcast", "vhost": "/", "destination": "broadcast.c", "destination_type": "queue", "routing_key": "" }
+  ]
+}

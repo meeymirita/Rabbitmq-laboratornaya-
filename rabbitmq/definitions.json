@@ -1,5 +1,11 @@
 {
   "vhosts": [{ "name": "/" }],
+  "users": [
+    { "name": "lab", "password": "lab", "tags": ["administrator"] }
+  ],
+  "permissions": [
+    { "user": "lab", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*" }
+  ],
   "exchanges": [
     { "name": "orders.topic",     "vhost": "/", "type": "topic",  "durable": true },
     { "name": "email.retry",      "vhost": "/", "type": "direct", "durable": true },

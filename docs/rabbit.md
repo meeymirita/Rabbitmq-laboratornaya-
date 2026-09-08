@@ -34,3 +34,9 @@ https://hub.docker.com/_/rabbitmq
 
 php
 https://hub.docker.com/_/php
+
+Management Plugin
+https://www.rabbitmq.com/docs/management
+
+RabbitMQ - Creating Queue, Exchange and Binding and Publishing Message
+https://www.youtube.com/watch?v=OP2MjpYY5Oc

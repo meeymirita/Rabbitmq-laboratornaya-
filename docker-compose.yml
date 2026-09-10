@@ -41,7 +41,7 @@ services:
     ports: ["8000:8000"]
     restart: "no"
 
-#  outbox-relay:     { <<: *app, command: php artisan worker:outbox-relay }
+  outbox-relay:     { <<: *app, command: php artisan worker:outbox-relay }
 #  order-worker:     { <<: *app, command: php artisan worker:order }
 #  email-worker:     { <<: *app, command: php artisan worker:email }
 #  analytics-worker: { <<: *app, command: php artisan worker:analytics }

@@ -42,9 +42,9 @@ services:
     restart: "no"
 
   outbox-relay:     { <<: *app, command: php artisan worker:outbox-relay }
-#  order-worker:     { <<: *app, command: php artisan worker:order }
-#  email-worker:     { <<: *app, command: php artisan worker:email }
-#  analytics-worker: { <<: *app, command: php artisan worker:analytics }
+  order-worker:     { <<: *app, command: php artisan worker:order }
+  email-worker:     { <<: *app, command: php artisan worker:email }
+  analytics-worker: { <<: *app, command: php artisan worker:analytics }
 #  failed-email-worker: { <<: *app, command: php artisan worker:failed-email }
 
 volumes:

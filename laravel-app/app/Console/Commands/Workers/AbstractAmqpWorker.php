@@ -53,7 +53,7 @@ abstract class AbstractAmqpWorker extends Command
         $redeliv = $msg->get('redelivered') ? ' (REDELIVERED)' : '';
         $this->line("← {$id}{$redeliv}");
 
-        if (ProcessedMessage::where('message_id', $id)->where('consumer', $this->consumerName())->exists()) {
+        if (ProcessedMessage::query()->where('message_id', $id)->where('consumer', $this->consumerName())->exists()) {
             $this->warn("   duplicate → ack без обработки");
             $msg->ack();
             return;
@@ -64,7 +64,7 @@ abstract class AbstractAmqpWorker extends Command
         try {
             DB::transaction(function () use ($payload, $msg, $id) {
                 $this->process($payload, $msg);
-                ProcessedMessage::create([
+                ProcessedMessage::query()->create([
                     'message_id' => $id, 'consumer' => $this->consumerName(), 'processed_at' => now(),
                 ]);
             });

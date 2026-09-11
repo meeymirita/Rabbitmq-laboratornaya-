@@ -40,3 +40,28 @@ https://www.rabbitmq.com/docs/management
 
 RabbitMQ - Creating Queue, Exchange and Binding and Publishing Message
 https://www.youtube.com/watch?v=OP2MjpYY5Oc
+
+
+Detecting Dead TCP Connections with Heartbeats and TCP Keepalives
+https://www.rabbitmq.com/docs/heartbeats
+
+Connections
+https://www.rabbitmq.com/docs/connections
+
+Channels
+https://www.rabbitmq.com/docs/channels
+
+(Consumer) Delivery Acknowledgements
+https://www.rabbitmq.com/docs/confirms#consumer-acknowledgements
+
+pcntl_async_signals
+https://www.php.net/manual/en/function.pcntl-async-signals.php
+
+Publisher Confirms
+https://www.rabbitmq.com/docs/confirms#publisher-confirms
+
+Режимы блокировки на уровне строк
+https://www.postgresql.org/docs/16/explicit-locking.html#LOCKING-ROWS
+
+Отправка почты
+https://laravel.com/framework/docs/13.x/mail#sending-mail

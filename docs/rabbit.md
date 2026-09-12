@@ -65,3 +65,9 @@ https://www.postgresql.org/docs/16/explicit-locking.html#LOCKING-ROWS
 
 Отправка почты
 https://laravel.com/framework/docs/13.x/mail#sending-mail
+
+Consumer Prefetch
+https://www.rabbitmq.com/docs/consumer-prefetch
+
+docker compose up
+https://docs.docker.com/reference/cli/docker/compose/up/

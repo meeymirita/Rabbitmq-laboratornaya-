@@ -74,7 +74,12 @@ abstract class AbstractAmqpWorker extends Command
         }
 
         if (config('lab.crash_before_ack')) {                                  // "💥 упали до ACK"
-            $this->error('CRASH before ack'); posix_kill(getmypid(), SIGKILL);
+            // posix_kill(getmypid(), SIGKILL) тут не работает: наш процесс — PID 1
+            // контейнера, а ядро Linux игнорирует SIGKILL/SIGSTOP для PID 1, если
+            // на них нет явного обработчика. exit() останавливает интерпретатор
+            // напрямую, без сигналов, — соединение с RabbitMQ обрывается некорректно.
+            $this->error('CRASH before ack');
+            exit(1);
         }
         $msg->ack();
         $this->info("   ✔ ack");

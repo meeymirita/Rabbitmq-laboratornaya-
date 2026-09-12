@@ -71,3 +71,12 @@ https://www.rabbitmq.com/docs/consumer-prefetch
 
 docker compose up
 https://docs.docker.com/reference/cli/docker/compose/up/
+
+Automatic Requeueing
+https://www.rabbitmq.com/docs/confirms#automatic-requeueing
+
+Negative Acknowledgement and Requeuing of Deliveries
+https://www.rabbitmq.com/docs/confirms#consumer-nacks-requeue
+
+Dead-Lettered Effects on Messages
+https://www.rabbitmq.com/docs/dlx#effects

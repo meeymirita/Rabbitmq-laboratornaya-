@@ -80,3 +80,12 @@ https://www.rabbitmq.com/docs/confirms#consumer-nacks-requeue
 
 Dead-Lettered Effects on Messages
 https://www.rabbitmq.com/docs/dlx#effects
+
+Dealing With Failed Jobs
+https://laravel.com/framework/docs/13.x/queues#dealing-with-failed-jobs
+
+Specifying Max Job Attempts / Timeout ValuesMax Attempts
+https://laravel.com/framework/docs/13.x/queues#max-job-attempts-and-timeout
+
+RabbitMQ tutorial - Publish/Subscribe
+https://www.rabbitmq.com/tutorials/tutorial-three-php
